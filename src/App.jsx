@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import NotFoundPage from './app/NotFoundPage.jsx';
 import { ROUTES } from './app/routes.js';
 import { AppLayout } from './components/layout/AppLayout.jsx';
@@ -40,6 +40,7 @@ export default function App() {
             <button type="button" onClick={signOut} className="font-semibold text-indigo-700 hover:text-indigo-900">Keluar</button>
           </div>
           <Routes>
+            <Route path="/login" element={<Navigate to="/" replace />} />
             <Route element={<AppLayout />}>
               {ROUTES.map(({ path, Page }) => <Route key={path} path={path} element={<Page />} />)}
               <Route path="*" element={<NotFoundPage />} />

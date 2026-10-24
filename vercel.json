@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://pabwe2026-proyek1-be.vercel.app/api/$1"
+    },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/jadwal", "destination": "/index.html" },
+    { "source": "/tugas", "destination": "/index.html" },
+    { "source": "/pengingat", "destination": "/index.html" }
+  ]
+}
