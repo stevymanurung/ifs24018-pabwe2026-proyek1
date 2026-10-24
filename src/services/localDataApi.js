@@ -1,11 +1,9 @@
 import { DAY_NAMES, dayIndex, toDateString, toMinutes } from '../lib/time.js';
+import { getLocalUser, isLocalToken } from './localAuth.js';
 
-export const DEMO_TOKEN = 'demo-local-study-planner';
-export const DEMO_USER = { id: 0, name: 'Pengguna Demo', email: 'demo@studyplanner.local' };
+export const LOCAL_DATA_KEY = 'study-planner-local-data';
 
-const STORAGE_KEY = 'study-planner-demo-data';
-
-function demoError(status, code, message) {
+function localApiError(status, code, message) {
   return Object.assign(new Error(message), { status, code });
 }
 
@@ -17,35 +15,25 @@ function dateOffset(days, baseDate = new Date()) {
 
 function initialData() {
   return {
-    sessions: [
-      { id: 1, course: 'Pemrograman Web', day: 0, start: '09:00', end: '10:40', room: 'Lab Komputer' },
-      { id: 2, course: 'Basis Data', day: 1, start: '13:00', end: '14:40', room: 'Ruang 204' },
-      { id: 3, course: 'Rekayasa Perangkat Lunak', day: 3, start: '10:00', end: '11:40', room: 'Ruang 105' },
-    ],
-    tasks: [
-      { id: 1, title: 'Menyelesaikan rancangan aplikasi', course: 'Pemrograman Web', dueDate: dateOffset(2), remindAt: '19:00', done: false },
-      { id: 2, title: 'Membaca materi normalisasi', course: 'Basis Data', dueDate: dateOffset(4), remindAt: '', done: false },
-      { id: 3, title: 'Membuat ringkasan kebutuhan sistem', course: 'Rekayasa Perangkat Lunak', dueDate: '', remindAt: '', done: true },
-    ],
-    alarms: [
-      { id: 1, label: 'Belajar mandiri', time: '19:00', days: [0, 1, 2, 3, 4], enabled: true },
-    ],
+    sessions: [],
+    tasks: [],
+    alarms: [],
     settings: { reminderLead: 10 },
   };
 }
 
-function loadData() {
-  const saved = globalThis.localStorage.getItem(STORAGE_KEY);
+function loadData(storageKey) {
+  const saved = globalThis.localStorage.getItem(storageKey);
   if (!saved) return initialData();
   try {
     return { ...initialData(), ...JSON.parse(saved) };
   } catch (error) {
-    throw demoError(500, 'DEMO_STORAGE_ERROR', `Data demo lokal tidak dapat dibaca: ${error.message}`);
+    throw localApiError(500, 'LOCAL_STORAGE_ERROR', `Data lokal tidak dapat dibaca: ${error.message}`);
   }
 }
 
-function saveData(data) {
-  globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function saveData(data, storageKey) {
+  globalThis.localStorage.setItem(storageKey, JSON.stringify(data));
 }
 
 function nextId(items) {
@@ -111,12 +99,16 @@ function buildDashboard(data, nowText) {
   };
 }
 
-export function requestDemoApi(path, { method = 'GET', body } = {}) {
+export function requestLocalApi(path, { method = 'GET', body } = {}) {
   const [pathname, query = ''] = path.split('?');
-  if (pathname === '/auth/me' && method === 'GET') return { user: DEMO_USER };
+  const token = globalThis.localStorage.getItem('study-planner-token');
+  const user = getLocalUser(token);
+  if (!isLocalToken(token) || !user) throw localApiError(401, 'UNAUTHENTICATED', 'Sesi lokal tidak valid. Silakan login kembali.');
+  if (pathname === '/auth/me' && method === 'GET') return { user };
   if (pathname === '/auth/logout' && method === 'POST') return null;
 
-  const data = loadData();
+  const storageKey = `${LOCAL_DATA_KEY}:${user.id}`;
+  const data = loadData(storageKey);
   const collectionMatch = /^\/(sessions|tasks|alarms)(?:\/(\d+))?$/.exec(pathname);
   if (collectionMatch) {
     const [, collection, id] = collectionMatch;
@@ -143,27 +135,27 @@ export function requestDemoApi(path, { method = 'GET', body } = {}) {
         const conflict = items.find((session) => session.day === item.day
           && toMinutes(item.start) < toMinutes(session.end)
           && toMinutes(item.end) > toMinutes(session.start));
-        if (conflict) throw demoError(409, 'SESSION_CONFLICT', `Bentrok dengan "${conflict.course}" (${conflict.start} - ${conflict.end})`);
+        if (conflict) throw localApiError(409, 'SESSION_CONFLICT', `Bentrok dengan "${conflict.course}" (${conflict.start} - ${conflict.end})`);
       }
       items.push(item);
-      saveData(data);
+      saveData(data, storageKey);
       return item;
     }
     const index = items.findIndex((item) => item.id === Number(id));
-    if (index < 0) throw demoError(404, 'NOT_FOUND', 'Data tidak ditemukan.');
+    if (index < 0) throw localApiError(404, 'NOT_FOUND', 'Data tidak ditemukan.');
     if (method === 'DELETE') {
       items.splice(index, 1);
-      saveData(data);
+      saveData(data, storageKey);
       return null;
     }
     if (method === 'PATCH' && collection === 'tasks') {
       items[index] = { ...items[index], done: Boolean(body.done) };
-      saveData(data);
+      saveData(data, storageKey);
       return items[index];
     }
     if (method === 'PATCH' && collection === 'alarms') {
       items[index] = { ...items[index], enabled: Boolean(body.enabled) };
-      saveData(data);
+      saveData(data, storageKey);
       return items[index];
     }
   }
@@ -171,11 +163,11 @@ export function requestDemoApi(path, { method = 'GET', body } = {}) {
   if (pathname === '/settings' && method === 'GET') return data.settings;
   if (pathname === '/settings' && method === 'PUT') {
     data.settings = { ...data.settings, ...body };
-    saveData(data);
+    saveData(data, storageKey);
     return data.settings;
   }
   if (pathname === '/dashboard' && method === 'GET') {
     return buildDashboard(data, new URLSearchParams(query).get('now'));
   }
-  throw demoError(404, 'NOT_FOUND', `Endpoint demo ${method} ${pathname} tidak ditemukan.`);
+  throw localApiError(404, 'NOT_FOUND', `Endpoint lokal ${method} ${pathname} tidak ditemukan.`);
 }

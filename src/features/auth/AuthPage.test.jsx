@@ -1,20 +1,37 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthPage } from './AuthPage.jsx';
 
-const { httpGet, httpPost } = vi.hoisted(() => ({ httpGet: vi.fn(), httpPost: vi.fn() }));
+const { httpGet, httpPost, loginLocal, registerLocal } = vi.hoisted(() => ({
+  httpGet: vi.fn(),
+  httpPost: vi.fn(),
+  loginLocal: vi.fn(),
+  registerLocal: vi.fn(),
+}));
 
 vi.mock('../../services/httpClient.js', () => ({
   http: { get: httpGet, post: httpPost },
 }));
 
+vi.mock('../../services/localAuth.js', () => ({
+  loginLocalAccount: loginLocal,
+  registerLocalAccount: registerLocal,
+}));
+
 describe('AuthPage', () => {
+  beforeEach(() => {
+    httpGet.mockReset();
+    httpPost.mockReset();
+    loginLocal.mockReset();
+    registerLocal.mockReset();
+  });
+
   it('explains when the backend is reachable but does not report database status', async () => {
     httpGet.mockResolvedValueOnce({ status: 'ok' });
     render(<AuthPage onAuthenticated={vi.fn()} />);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('API backend aktif, tetapi belum melaporkan database');
+    expect(await screen.findByRole('status')).toHaveTextContent('API aktif. Daftar dan login tetap bisa digunakan');
     expect(screen.getByRole('status')).not.toHaveTextContent('Status database belum dapat dipastikan');
   });
 
@@ -42,23 +59,55 @@ describe('AuthPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Database persisten terhubung.');
   });
 
-  it('offers a separate local demo entry without submitting credentials to the backend', async () => {
-    const onDemo = vi.fn();
+  it('registers and signs in through the normal form when production has no persistent database status', async () => {
+    const onLocalAuthenticated = vi.fn();
+    const account = {
+      token: 'local-study-planner:account-id',
+      user: { id: 'account-id', name: 'Test User', email: 'test@example.com' },
+      local: true,
+    };
     httpGet.mockResolvedValueOnce({ status: 'ok' });
-    render(<AuthPage onAuthenticated={vi.fn()} onDemo={onDemo} />);
+    registerLocal.mockResolvedValueOnce(account);
+    render(<AuthPage onAuthenticated={vi.fn()} onLocalAuthenticated={onLocalAuthenticated} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar sekarang' }));
+    await userEvent.type(screen.getByLabelText('Nama lengkap'), account.user.name);
+    await userEvent.type(screen.getByLabelText('Email'), account.user.email);
+    await userEvent.type(screen.getByLabelText('Password'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar akun' }));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Masuk mode demo lokal' }));
-
-    expect(onDemo).toHaveBeenCalledOnce();
     expect(httpPost).not.toHaveBeenCalled();
-    expect(screen.getByText(/disimpan hanya di browser ini, bukan ke database/i)).toBeInTheDocument();
+    expect(registerLocal).toHaveBeenCalledWith({
+      name: account.user.name,
+      email: account.user.email,
+      password: 'password123',
+    });
+    expect(onLocalAuthenticated).toHaveBeenCalledWith(account);
+  });
+
+  it('uses the local account from the normal login form if the backend rejects the remote account', async () => {
+    const onLocalAuthenticated = vi.fn();
+    const account = {
+      token: 'local-study-planner:account-id',
+      user: { id: 'account-id', name: 'Test User', email: 'test@example.com' },
+      local: true,
+    };
+    httpGet.mockResolvedValueOnce({ status: 'ok' });
+    loginLocal.mockResolvedValueOnce(account);
+    render(<AuthPage onAuthenticated={vi.fn()} onLocalAuthenticated={onLocalAuthenticated} />);
+    await userEvent.type(screen.getByLabelText('Email'), account.user.email);
+    await userEvent.type(screen.getByLabelText('Password'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    expect(loginLocal).toHaveBeenCalledWith({ email: account.user.email, password: 'password123' });
+    expect(httpPost).not.toHaveBeenCalled();
+    expect(onLocalAuthenticated).toHaveBeenCalledWith(account);
   });
 
   it('switches to login when registration reports an existing email', async () => {
     httpGet.mockResolvedValueOnce({ status: 'ok', database: 'connected', dialect: 'postgres' });
     httpPost.mockRejectedValueOnce(Object.assign(new Error('Email sudah terdaftar. Silakan login.'), {
       code: 'EMAIL_EXISTS',
-    }));
+    })).mockRejectedValueOnce(Object.assign(new Error('Password salah.'), { code: 'INVALID_CREDENTIALS', status: 401 }));
     render(<AuthPage onAuthenticated={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: 'Daftar sekarang' }));
     await userEvent.type(screen.getByLabelText('Nama lengkap'), 'Test User');
@@ -74,18 +123,20 @@ describe('AuthPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Database persisten terhubung.');
   });
 
-  it('does not assume the database is missing when login fails and health omits database status', async () => {
+  it('offers registration after neither backend nor local browser has the account', async () => {
     httpGet.mockResolvedValueOnce({ status: 'ok' });
     httpPost.mockRejectedValueOnce(Object.assign(new Error('Email atau password tidak tepat.'), {
       code: 'INVALID_CREDENTIALS',
+      status: 401,
     }));
-    render(<AuthPage onAuthenticated={vi.fn()} />);
+    loginLocal.mockRejectedValueOnce(Object.assign(new Error('Akun lokal tidak ditemukan.'), {
+      code: 'INVALID_CREDENTIALS',
+    }));
+    render(<AuthPage onAuthenticated={vi.fn()} onLocalAuthenticated={vi.fn()} />);
     await userEvent.type(screen.getByLabelText('Email'), 'test@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'password123');
     await userEvent.click(screen.getByRole('button', { name: 'Login' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Health API hanya menyatakan "ok" dan tidak melaporkan database');
-    expect(screen.getByRole('alert')).toHaveTextContent('memakai database berbeda');
-    expect(screen.getByRole('alert')).toHaveTextContent('DATABASE_URL atau POSTGRES_URL');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Pilih Daftar');
   });
 });

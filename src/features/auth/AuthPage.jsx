@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { http } from '../../services/httpClient.js';
+import { loginLocalAccount, registerLocalAccount } from '../../services/localAuth.js';
 
 function getDatabaseMessage(status) {
   if (status === 'checking') return 'Memeriksa koneksi database...';
@@ -9,12 +10,12 @@ function getDatabaseMessage(status) {
     return 'Backend memakai SQLite. Akun mungkin tidak tersimpan konsisten di deployment; DATABASE_URL PostgreSQL perlu diatur.';
   }
   if (status?.status === 'ok' && !status.dialect) {
-    return 'API backend aktif, tetapi belum melaporkan database. Frontend terhubung; sinkronisasi database perlu dipastikan di deployment backend.';
+    return 'API aktif. Daftar dan login tetap bisa digunakan; sampai database backend terkonfirmasi, akun dan fitur disimpan di browser ini.';
   }
   return 'Status database belum dapat dipastikan. Periksa koneksi API dan konfigurasi backend.';
 }
 
-export function AuthPage({ onAuthenticated, onDemo }) {
+export function AuthPage({ onAuthenticated, onLocalAuthenticated }) {
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,17 +37,76 @@ export function AuthPage({ onAuthenticated, onDemo }) {
 
   async function submit(event) {
     event.preventDefault(); setError(''); setBusy(true);
+    const credentials = { ...(register ? { name } : {}), email, password };
     try {
-      const result = await http.post(`/auth/${register ? 'register' : 'login'}`, { ...(register ? { name } : {}), email, password });
+      const localFirst = !(databaseStatus?.database === 'connected' && databaseStatus.dialect === 'postgres')
+        && !(import.meta.env?.DEV && databaseStatus?.database === 'connected' && databaseStatus.dialect === 'sqlite');
+      if (localFirst && onLocalAuthenticated) {
+        if (register) {
+          await onLocalAuthenticated(await registerLocalAccount(credentials));
+          return;
+        }
+        try {
+          await onLocalAuthenticated(await loginLocalAccount({ email, password }));
+          return;
+        } catch (localError) {
+          if (localError.code !== 'INVALID_CREDENTIALS') throw localError;
+          try {
+            await onAuthenticated(await http.post('/auth/login', { email, password }));
+            return;
+          } catch (backendError) {
+            if (backendError.status === 401) {
+              setError('Akun tidak ditemukan di backend maupun browser ini. Pilih Daftar untuk membuat akun dan langsung menguji dashboard serta fitur.');
+            } else {
+              setError(localError.message || backendError.message || 'Tidak dapat memproses akun.');
+            }
+            return;
+          }
+        }
+      }
+      const result = await http.post(`/auth/${register ? 'register' : 'login'}`, credentials);
       await onAuthenticated(result);
     } catch (err) {
+      const backendUnavailable = err.code === 'NETWORK_ERROR' || err.status === 404 || err.status >= 500;
       if (register && err.code === 'EMAIL_EXISTS') {
-        setMode('login');
-        setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
+        try {
+          const result = await http.post('/auth/login', { email, password });
+          await onAuthenticated(result);
+        } catch (loginError) {
+          if (loginError.code !== 'INVALID_CREDENTIALS') {
+            setMode('login');
+            setError(loginError.message || 'Email ini sudah terdaftar. Silakan login.');
+            return;
+          }
+          if (!onLocalAuthenticated) {
+            setMode('login');
+            setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
+            return;
+          }
+          try {
+            await onLocalAuthenticated(await registerLocalAccount(credentials));
+          } catch (localError) {
+            setError(localError.message || 'Tidak dapat membuat sesi lokal.');
+          }
+        }
+      } else if (register && backendUnavailable && onLocalAuthenticated) {
+        try {
+          await onLocalAuthenticated(await registerLocalAccount(credentials));
+        } catch (localError) {
+          setError(localError.message || 'Tidak dapat membuat akun lokal.');
+        }
+      } else if (!register && (backendUnavailable || err.code === 'INVALID_CREDENTIALS') && onLocalAuthenticated) {
+        try {
+          await onLocalAuthenticated(await loginLocalAccount({ email, password }));
+        } catch (localError) {
+          if (localError.code === 'INVALID_CREDENTIALS' && err.code === 'INVALID_CREDENTIALS') {
+            setError('Login backend ditolak. Jika akun hanya tersedia di backend yang belum tersambung, buat akun lewat Daftar agar bisa masuk dan menguji fitur pada browser ini.');
+          } else {
+            setError(localError.message || err.message || 'Tidak dapat memproses akun.');
+          }
+        }
       } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.status === 'ok' && !databaseStatus.dialect) {
-        setError('Login ditolak backend. Health API hanya menyatakan "ok" dan tidak melaporkan database, jadi belum bisa dipastikan apakah akun/password tidak cocok atau backend memakai database berbeda. Jika database PostgreSQL sudah dibuat, pastikan backend production memakai URL database tersebut (DATABASE_URL atau POSTGRES_URL) dan sudah menggunakan versi backend terbaru.');
-      } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.dialect === 'sqlite') {
-        setError('Backend production memakai SQLite sementara, sehingga akun bisa hilang antar-instance. Pengelola perlu menghubungkan PostgreSQL persisten sebelum mencoba login lagi.');
+        setError('Login ditolak backend. Coba daftar untuk membuat akun dan langsung masuk; bila backend tidak tersedia, akun lokal browser akan digunakan.');
       } else {
         setError(err.message || 'Tidak dapat memproses akun.');
       }
@@ -73,15 +133,6 @@ export function AuthPage({ onAuthenticated, onDemo }) {
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
             <button disabled={busy} className="w-full rounded-xl bg-indigo-700 px-4 py-3.5 font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-800 disabled:cursor-wait disabled:opacity-60">{busy ? 'Memproses...' : register ? 'Daftar akun' : 'Login'}</button>
           </form>
-          {onDemo && (
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-medium text-amber-900">Perlu membuka dashboard sekarang?</p>
-              <p className="mt-1 text-xs leading-5 text-amber-800">Mode demo tidak memerlukan server. Data demo disimpan hanya di browser ini, bukan ke database.</p>
-              <button type="button" onClick={onDemo} className="mt-3 w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100">
-                Masuk mode demo lokal
-              </button>
-            </div>
-          )}
           <p className="mt-6 text-center text-sm text-slate-600">{register ? 'Sudah punya akun?' : 'Belum punya akun?'}{' '}<button type="button" onClick={() => { setMode(register ? 'login' : 'register'); setError(''); }} className="font-semibold text-indigo-700 hover:underline">{register ? 'Login di sini' : 'Daftar sekarang'}</button></p>
           <p role="status" className="mt-6 text-center text-xs leading-5 text-slate-500">{getDatabaseMessage(databaseStatus)}</p>
         </section>
