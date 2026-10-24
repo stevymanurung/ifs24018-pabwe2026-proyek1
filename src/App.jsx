@@ -43,20 +43,12 @@ export default function App() {
     return () => globalThis.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
   }, []);
 
-  const signIn = async (result) => {
-    globalThis.localStorage?.setItem('study-planner-token', result.token);
-    try {
-      const { user } = await http.get('/auth/me');
-      setAuth({ status: 'signed-in', user });
-    } catch (error) {
-      if (error.status === 401) {
-        globalThis.localStorage?.removeItem('study-planner-token');
-        setAuth({ status: 'signed-out', user: null });
-      } else {
-        setAuth({ status: 'unavailable', user: null, error: error.message });
-      }
-      throw error;
+  const signIn = (result) => {
+    if (!result?.token || !result?.user) {
+      throw new Error('Respons login dari server tidak lengkap. Coba lagi.');
     }
+    globalThis.localStorage?.setItem('study-planner-token', result.token);
+    setAuth({ status: 'signed-in', user: result.user });
   };
   const signOut = async () => {
     try { await http.post('/auth/logout', {}); } catch { /* Token lokal tetap dihapus saat server tidak tersedia. */ }

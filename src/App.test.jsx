@@ -75,13 +75,12 @@ describe('App authentication flow', () => {
     expect(await screen.findByRole('button', { name: 'Login test' })).toBeInTheDocument();
   });
 
-  it('verifies a new login session before showing the dashboard', async () => {
-    httpGet.mockResolvedValue({ user: { id: 1, name: 'Test', email: 'test@example.com' } });
-
+  it('opens the dashboard from a successful login response without a redundant session request', async () => {
     renderApp();
     fireEvent.click(await screen.findByRole('button', { name: 'Login test' }));
 
     expect(await screen.findByText('Dashboard berhasil dibuka')).toBeInTheDocument();
     expect(globalThis.localStorage.getItem('study-planner-token')).toBe('new-token');
+    expect(httpGet).not.toHaveBeenCalled();
   });
 });
