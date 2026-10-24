@@ -10,6 +10,7 @@ export class ApiError extends Error {
 }
 
 const NETWORK_MESSAGE = 'Tidak dapat terhubung ke server API. Pastikan backend berjalan dan alamat proxy API sudah benar.';
+export const AUTH_REQUIRED_EVENT = 'study-planner:auth-required';
 
 /**
  * Membuat klien HTTP JSON. `fetchImpl` dapat diganti saat pengujian.
@@ -33,6 +34,7 @@ export function createHttpClient({ baseUrl, fetchImpl = (...args) => fetch(...ar
     if (response.status === 204) return null;
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
+      if (response.status === 401) globalThis.dispatchEvent?.(new Event(AUTH_REQUIRED_EVENT));
       const error = payload?.error;
       throw new ApiError(response.status, error?.code ?? 'HTTP_ERROR', error?.message ?? `Permintaan gagal (${response.status})`, error?.details);
     }

@@ -6,7 +6,7 @@ import { AppLayout } from './components/layout/AppLayout.jsx';
 import { PlannerProvider } from './context/PlannerProvider.jsx';
 import { ReminderProvider } from './features/reminders/ReminderProvider.jsx';
 import { AuthPage } from './features/auth/AuthPage.jsx';
-import { http } from './services/httpClient.js';
+import { AUTH_REQUIRED_EVENT, http } from './services/httpClient.js';
 
 export default function App() {
   const [auth, setAuth] = useState({ status: 'checking', user: null });
@@ -17,6 +17,15 @@ export default function App() {
       globalThis.localStorage?.removeItem('study-planner-token');
       setAuth({ status: 'signed-out', user: null });
     });
+  }, []);
+
+  useEffect(() => {
+    const handleAuthRequired = () => {
+      globalThis.localStorage?.removeItem('study-planner-token');
+      setAuth({ status: 'signed-out', user: null });
+    };
+    globalThis.addEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
+    return () => globalThis.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
   }, []);
 
   const signIn = (result) => {

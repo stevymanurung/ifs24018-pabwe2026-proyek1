@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createHttpClient } from './httpClient.js';
+import { AUTH_REQUIRED_EVENT, ApiError, createHttpClient } from './httpClient.js';
 
 const jsonResponse = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
@@ -61,6 +61,22 @@ describe('createHttpClient', () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error.code).toBe('NETWORK_ERROR');
     expect(error.message).toMatch(/Tidak dapat terhubung/);
+  });
+
+  it('memberi tahu aplikasi saat server menolak sesi agar pengguna dapat login ulang', async () => {
+    const listener = vi.fn();
+    globalThis.addEventListener(AUTH_REQUIRED_EVENT, listener);
+    const http = createHttpClient({
+      baseUrl: '/api',
+      fetchImpl: async () => jsonResponse(401, { error: { code: 'UNAUTHENTICATED', message: 'Login diperlukan.' } }),
+    });
+
+    try {
+      await expect(http.get('/tasks')).rejects.toMatchObject({ status: 401, code: 'UNAUTHENTICATED' });
+      expect(listener).toHaveBeenCalledOnce();
+    } finally {
+      globalThis.removeEventListener(AUTH_REQUIRED_EVENT, listener);
+    }
   });
 
   it('pembatalan (AbortError) diteruskan apa adanya, bukan dianggap error jaringan', async () => {
