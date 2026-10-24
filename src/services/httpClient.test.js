@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AUTH_REQUIRED_EVENT, ApiError, createHttpClient } from './httpClient.js';
+import { DEMO_TOKEN } from './demoApi.js';
 
 const jsonResponse = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
@@ -29,6 +30,23 @@ describe('createHttpClient', () => {
       }));
     } finally {
       globalThis.localStorage.removeItem('study-planner-token');
+    }
+  });
+
+  it('routes demo sessions to browser storage instead of the backend', async () => {
+    globalThis.localStorage.setItem('study-planner-token', DEMO_TOKEN);
+    const fetchImpl = vi.fn();
+    const http = createHttpClient({ baseUrl: '/api', fetchImpl });
+
+    try {
+      await expect(http.get('/auth/me')).resolves.toEqual({
+        user: { id: 0, name: 'Pengguna Demo', email: 'demo@studyplanner.local' },
+      });
+      await expect(http.get('/sessions')).resolves.toHaveLength(3);
+      expect(fetchImpl).not.toHaveBeenCalled();
+    } finally {
+      globalThis.localStorage.removeItem('study-planner-token');
+      globalThis.localStorage.removeItem('study-planner-demo-data');
     }
   });
 

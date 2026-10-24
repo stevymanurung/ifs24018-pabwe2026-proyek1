@@ -1,3 +1,5 @@
+import { DEMO_TOKEN, requestDemoApi } from './demoApi.js';
+
 /** Error API: membawa status HTTP, kode mesin, dan pesan yang aman ditampilkan kepada pengguna. */
 export class ApiError extends Error {
   constructor(status, code, message, details) {
@@ -18,6 +20,11 @@ export const AUTH_REQUIRED_EVENT = 'study-planner:auth-required';
  */
 export function createHttpClient({ baseUrl, fetchImpl = (...args) => fetch(...args) }) {
   async function request(path, { method = 'GET', body, signal } = {}) {
+    if (globalThis.localStorage?.getItem('study-planner-token') === DEMO_TOKEN) {
+      if (signal?.aborted) throw Object.assign(new Error('Permintaan dibatalkan.'), { name: 'AbortError' });
+      return requestDemoApi(path, { method, body });
+    }
+
     let response;
     try {
       response = await fetchImpl(`${baseUrl}${path}`, {

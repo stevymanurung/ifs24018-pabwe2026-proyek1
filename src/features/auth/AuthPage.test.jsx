@@ -42,6 +42,18 @@ describe('AuthPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Database persisten terhubung.');
   });
 
+  it('offers a separate local demo entry without submitting credentials to the backend', async () => {
+    const onDemo = vi.fn();
+    httpGet.mockResolvedValueOnce({ status: 'ok' });
+    render(<AuthPage onAuthenticated={vi.fn()} onDemo={onDemo} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Masuk mode demo lokal' }));
+
+    expect(onDemo).toHaveBeenCalledOnce();
+    expect(httpPost).not.toHaveBeenCalled();
+    expect(screen.getByText(/disimpan hanya di browser ini, bukan ke database/i)).toBeInTheDocument();
+  });
+
   it('switches to login when registration reports an existing email', async () => {
     httpGet.mockResolvedValueOnce({ status: 'ok', database: 'connected', dialect: 'postgres' });
     httpPost.mockRejectedValueOnce(Object.assign(new Error('Email sudah terdaftar. Silakan login.'), {

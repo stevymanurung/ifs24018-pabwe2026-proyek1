@@ -14,7 +14,7 @@ function getDatabaseMessage(status) {
   return 'Status database belum dapat dipastikan. Periksa koneksi API dan konfigurasi backend.';
 }
 
-export function AuthPage({ onAuthenticated }) {
+export function AuthPage({ onAuthenticated, onDemo }) {
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -73,6 +73,15 @@ export function AuthPage({ onAuthenticated }) {
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
             <button disabled={busy} className="w-full rounded-xl bg-indigo-700 px-4 py-3.5 font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-800 disabled:cursor-wait disabled:opacity-60">{busy ? 'Memproses...' : register ? 'Daftar akun' : 'Login'}</button>
           </form>
+          {onDemo && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-medium text-amber-900">Perlu membuka dashboard sekarang?</p>
+              <p className="mt-1 text-xs leading-5 text-amber-800">Mode demo tidak memerlukan server. Data demo disimpan hanya di browser ini, bukan ke database.</p>
+              <button type="button" onClick={onDemo} className="mt-3 w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100">
+                Masuk mode demo lokal
+              </button>
+            </div>
+          )}
           <p className="mt-6 text-center text-sm text-slate-600">{register ? 'Sudah punya akun?' : 'Belum punya akun?'}{' '}<button type="button" onClick={() => { setMode(register ? 'login' : 'register'); setError(''); }} className="font-semibold text-indigo-700 hover:underline">{register ? 'Login di sini' : 'Daftar sekarang'}</button></p>
           <p role="status" className="mt-6 text-center text-xs leading-5 text-slate-500">{getDatabaseMessage(databaseStatus)}</p>
         </section>

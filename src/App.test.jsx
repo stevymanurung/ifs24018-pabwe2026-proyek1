@@ -2,6 +2,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Outlet } from 'react-router-dom';
 import App from './App.jsx';
+import { DEMO_TOKEN } from './services/demoApi.js';
 
 const { httpGet } = vi.hoisted(() => ({ httpGet: vi.fn() }));
 
@@ -27,13 +28,14 @@ vi.mock('./features/reminders/ReminderProvider.jsx', () => ({
 }));
 
 vi.mock('./features/auth/AuthPage.jsx', () => ({
-  AuthPage: ({ onAuthenticated }) => (
-    <button type="button" onClick={() => onAuthenticated({
-      token: 'new-token',
-      user: { id: 1, name: 'Test', email: 'test@example.com' },
-    })}>
-      Login test
-    </button>
+  AuthPage: ({ onAuthenticated, onDemo }) => (
+    <>
+      <button type="button" onClick={() => onAuthenticated({
+        token: 'new-token',
+        user: { id: 1, name: 'Test', email: 'test@example.com' },
+      })}>Login test</button>
+      <button type="button" onClick={onDemo}>Demo test</button>
+    </>
   ),
 }));
 
@@ -81,6 +83,23 @@ describe('App authentication flow', () => {
 
     expect(await screen.findByText('Dashboard berhasil dibuka')).toBeInTheDocument();
     expect(globalThis.localStorage.getItem('study-planner-token')).toBe('new-token');
+    expect(httpGet).not.toHaveBeenCalled();
+  });
+
+  it('opens the dashboard in local demo mode without contacting the backend', async () => {
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'Demo test' }));
+
+    expect(await screen.findByText('Dashboard berhasil dibuka')).toBeInTheDocument();
+    expect(globalThis.localStorage.getItem('study-planner-token')).toBe(DEMO_TOKEN);
+    expect(httpGet).not.toHaveBeenCalled();
+  });
+
+  it('restores a local demo session after a page reload without contacting the backend', async () => {
+    globalThis.localStorage.setItem('study-planner-token', DEMO_TOKEN);
+    renderApp();
+
+    expect(await screen.findByText('Dashboard berhasil dibuka')).toBeInTheDocument();
     expect(httpGet).not.toHaveBeenCalled();
   });
 });
