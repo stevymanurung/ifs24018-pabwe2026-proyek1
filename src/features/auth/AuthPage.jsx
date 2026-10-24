@@ -9,9 +9,9 @@ function getDatabaseMessage(status) {
     return 'Backend memakai SQLite. Akun mungkin tidak tersimpan konsisten di deployment; DATABASE_URL PostgreSQL perlu diatur.';
   }
   if (status?.status === 'ok' && !status.dialect) {
-    return 'Backend belum diperbarui. Status database persisten belum bisa dipastikan.';
+    return 'API backend aktif, tetapi belum melaporkan database. Frontend terhubung; sinkronisasi database perlu dipastikan di deployment backend.';
   }
-  return 'Database backend belum terhubung. Login dan pendaftaran mungkin tidak tersimpan.';
+  return 'Status database belum dapat dipastikan. Periksa koneksi API dan konfigurasi backend.';
 }
 
 export function AuthPage({ onAuthenticated }) {
@@ -44,7 +44,7 @@ export function AuthPage({ onAuthenticated }) {
         setMode('login');
         setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
       } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.status === 'ok' && !databaseStatus.dialect) {
-        setError(`Backend production belum mengonfirmasi database persisten. Akun yang dibuat sebelumnya mungkin tersimpan di database sementara, jadi login ditolak. Pengelola perlu mengatur DATABASE_URL atau POSTGRES_URL dan memperbarui backend sebelum mencoba login lagi.`);
+        setError('Login ditolak backend. Health API hanya menyatakan "ok" dan tidak melaporkan database, jadi belum bisa dipastikan apakah akun/password tidak cocok atau backend memakai database berbeda. Jika database PostgreSQL sudah dibuat, pastikan backend production memakai URL database tersebut (DATABASE_URL atau POSTGRES_URL) dan sudah menggunakan versi backend terbaru.');
       } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.dialect === 'sqlite') {
         setError('Backend production memakai SQLite sementara, sehingga akun bisa hilang antar-instance. Pengelola perlu menghubungkan PostgreSQL persisten sebelum mencoba login lagi.');
       } else {

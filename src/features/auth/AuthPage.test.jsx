@@ -10,12 +10,12 @@ vi.mock('../../services/httpClient.js', () => ({
 }));
 
 describe('AuthPage', () => {
-  it('explains when the connected backend still reports an old database health response', async () => {
+  it('explains when the backend is reachable but does not report database status', async () => {
     httpGet.mockResolvedValueOnce({ status: 'ok' });
     render(<AuthPage onAuthenticated={vi.fn()} />);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Backend belum diperbarui');
-    expect(screen.getByRole('status')).not.toHaveTextContent('Database backend belum terhubung');
+    expect(await screen.findByRole('status')).toHaveTextContent('API backend aktif, tetapi belum melaporkan database');
+    expect(screen.getByRole('status')).not.toHaveTextContent('Status database belum dapat dipastikan');
   });
 
   it('switches to login when registration reports an existing email', async () => {
@@ -38,7 +38,7 @@ describe('AuthPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Database persisten terhubung.');
   });
 
-  it('explains when login fails while production has no persistent database confirmation', async () => {
+  it('does not assume the database is missing when login fails and health omits database status', async () => {
     httpGet.mockResolvedValueOnce({ status: 'ok' });
     httpPost.mockRejectedValueOnce(Object.assign(new Error('Email atau password tidak tepat.'), {
       code: 'INVALID_CREDENTIALS',
@@ -48,7 +48,8 @@ describe('AuthPage', () => {
     await userEvent.type(screen.getByLabelText('Password'), 'password123');
     await userEvent.click(screen.getByRole('button', { name: 'Login' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Backend production belum mengonfirmasi database persisten');
-    expect(screen.getByRole('alert')).toHaveTextContent('mengatur DATABASE_URL');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Health API hanya menyatakan "ok" dan tidak melaporkan database');
+    expect(screen.getByRole('alert')).toHaveTextContent('memakai database berbeda');
+    expect(screen.getByRole('alert')).toHaveTextContent('DATABASE_URL atau POSTGRES_URL');
   });
 });
