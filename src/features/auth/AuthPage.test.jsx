@@ -48,7 +48,7 @@ describe('AuthPage', () => {
     await userEvent.type(screen.getByLabelText('Password'), 'password123');
     await userEvent.click(screen.getByRole('button', { name: 'Login' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Backend production belum melaporkan database persisten');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Backend production belum mengonfirmasi database persisten');
     expect(screen.getByRole('alert')).toHaveTextContent('mengatur DATABASE_URL');
   });
 });
