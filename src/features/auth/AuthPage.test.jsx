@@ -37,4 +37,18 @@ describe('AuthPage', () => {
     expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Database persisten terhubung.');
   });
+
+  it('explains when login fails while production has no persistent database confirmation', async () => {
+    httpGet.mockResolvedValueOnce({ status: 'ok' });
+    httpPost.mockRejectedValueOnce(Object.assign(new Error('Email atau password tidak tepat.'), {
+      code: 'INVALID_CREDENTIALS',
+    }));
+    render(<AuthPage onAuthenticated={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText('Email'), 'test@example.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Backend production belum melaporkan database persisten');
+    expect(screen.getByRole('alert')).toHaveTextContent('mengatur DATABASE_URL');
+  });
 });

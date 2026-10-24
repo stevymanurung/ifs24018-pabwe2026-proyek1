@@ -43,6 +43,10 @@ export function AuthPage({ onAuthenticated }) {
       if (register && err.code === 'EMAIL_EXISTS') {
         setMode('login');
         setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
+      } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.status === 'ok' && !databaseStatus.dialect) {
+        setError(`${err.message} Backend production belum melaporkan database persisten. Akun dari pendaftaran sebelumnya mungkin tidak tersimpan; pengelola perlu mengatur DATABASE_URL dan memperbarui backend.`);
+      } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.dialect === 'sqlite') {
+        setError(`${err.message} Backend production memakai SQLite sementara, sehingga akun bisa hilang antar-instance. Pengelola perlu menghubungkan PostgreSQL persisten sebelum pendaftaran ulang.`);
       } else {
         setError(err.message || 'Tidak dapat memproses akun.');
       }
