@@ -22,6 +22,9 @@ describe('AuthPage', () => {
     httpGet.mockResolvedValueOnce({ status: 'ok' });
     render(<AuthPage onAuthenticated={vi.fn()} />);
 
+    expect(document.querySelector('#username')).toBe(screen.getByLabelText('Email'));
+    expect(document.querySelector('#password')).toBe(screen.getByLabelText('Password'));
+    expect(document.querySelector('#btn-submit')).toBe(screen.getByRole('button', { name: 'Login' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Backend aktif, tetapi versi ini belum melaporkan status database');
     expect(screen.getByRole('status')).not.toHaveTextContent('Status database belum dapat dipastikan');
   });
