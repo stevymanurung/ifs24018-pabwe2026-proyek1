@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://pabwe2026-proyek1-be.vercel.app/api/$1"
+      "destination": "https://ifs24018-pabwe2026-proyek1-be-1unq.vercel.app/api/$1"
     },
     { "source": "/login", "destination": "/index.html" },
     { "source": "/jadwal", "destination": "/index.html" },
