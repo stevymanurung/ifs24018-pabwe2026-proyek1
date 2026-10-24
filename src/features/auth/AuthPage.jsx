@@ -15,7 +15,14 @@ export function AuthPage({ onAuthenticated }) {
     try {
       const result = await http.post(`/auth/${register ? 'register' : 'login'}`, { ...(register ? { name } : {}), email, password });
       await onAuthenticated(result);
-    } catch (err) { setError(err.message || 'Tidak dapat memproses akun.'); }
+    } catch (err) {
+      if (register && err.code === 'EMAIL_EXISTS') {
+        setMode('login');
+        setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
+      } else {
+        setError(err.message || 'Tidak dapat memproses akun.');
+      }
+    }
     finally { setBusy(false); }
   }
 

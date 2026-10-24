@@ -20,9 +20,10 @@ Pastikan backend Express berjalan pada alamat tersebut sebelum mencoba login. Ji
 menggunakan alamat atau port berbeda, atur `VITE_API_PROXY` di `.env` frontend.
 
 Hasil build ada di `dist/`. Deploy folder hasil build ke Vercel. `vercel.json` meneruskan
-`/api/*` ke backend produksi dan mengarahkan route SPA seperti `/login` ke aplikasi frontend,
-jadi `VITE_API_BASE` tidak perlu diatur untuk deployment ini. Jika alamat backend berubah,
-perbarui tujuan rewrite `/api/(.*)` di `vercel.json`, lalu deploy ulang frontend.
+`/api/*` ke backend produksi dan mengarahkan route SPA ke aplikasi frontend, jadi halaman
+fitur tetap dapat dibuka langsung atau saat dimuat ulang. `VITE_API_BASE` tidak perlu diatur
+untuk deployment ini. Jika alamat backend berubah, perbarui tujuan rewrite `/api/(.*)` di
+`vercel.json`, lalu deploy ulang frontend.
 
 Jika frontend dan backend diakses langsung dari domain berbeda tanpa proxy Vercel, set
 `VITE_API_BASE` ke URL backend sampai path `/api` dan `CORS_ORIGIN` backend ke origin frontend.
