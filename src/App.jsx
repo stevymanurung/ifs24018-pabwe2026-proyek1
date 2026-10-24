@@ -7,7 +7,6 @@ import { PlannerProvider } from './context/PlannerProvider.jsx';
 import { ReminderProvider } from './features/reminders/ReminderProvider.jsx';
 import { AuthPage } from './features/auth/AuthPage.jsx';
 import { AUTH_REQUIRED_EVENT, http } from './services/httpClient.js';
-import { getLocalUser, isLocalToken } from './services/localAuth.js';
 
 export default function App() {
   const [auth, setAuth] = useState({ status: 'checking', user: null });
@@ -18,12 +17,7 @@ export default function App() {
       setAuth({ status: 'signed-out', user: null });
       return;
     }
-    if (isLocalToken(token)) {
-      const user = getLocalUser(token);
-      if (user) {
-        setAuth({ status: 'signed-in', user, local: true });
-        return;
-      }
+    if (token.startsWith('local-study-planner:')) {
       globalThis.localStorage?.removeItem('study-planner-token');
       setAuth({ status: 'signed-out', user: null });
       return;
@@ -61,17 +55,8 @@ export default function App() {
     globalThis.localStorage?.setItem('study-planner-token', result.token);
     setAuth({ status: 'signed-in', user: result.user });
   };
-  const signInLocal = (result) => {
-    if (!result?.token || !result?.user || !result.local) {
-      throw new Error('Sesi akun lokal tidak lengkap. Silakan coba lagi.');
-    }
-    globalThis.localStorage?.setItem('study-planner-token', result.token);
-    setAuth({ status: 'signed-in', user: result.user, local: true });
-  };
   const signOut = async () => {
-    if (!auth.local) {
-      try { await http.post('/auth/logout', {}); } catch { /* Token lokal tetap dihapus saat server tidak tersedia. */ }
-    }
+    try { await http.post('/auth/logout', {}); } catch { /* Token lokal tetap dihapus saat server tidak tersedia. */ }
     globalThis.localStorage?.removeItem('study-planner-token');
     setAuth({ status: 'signed-out', user: null });
   };
@@ -92,14 +77,13 @@ export default function App() {
       </main>
     );
   }
-  if (auth.status === 'signed-out') return <AuthPage onAuthenticated={signIn} onLocalAuthenticated={signInLocal} />;
+  if (auth.status === 'signed-out') return <AuthPage onAuthenticated={signIn} />;
   return (
     <PlannerProvider>
       <ReminderProvider>
         <div className="relative">
           <div className="fixed right-4 top-3 z-50 flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
             <span className="hidden text-slate-600 sm:inline">Halo, <strong className="text-slate-900">{auth.user.name}</strong></span>
-            {auth.local && <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">Akun lokal · browser ini</span>}
             <button type="button" onClick={signOut} className="font-semibold text-indigo-700 hover:text-indigo-900">Keluar</button>
           </div>
           <Routes>

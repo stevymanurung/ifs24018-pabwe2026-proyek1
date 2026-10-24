@@ -10,13 +10,6 @@ vi.mock('./services/httpClient.js', () => ({
   http: { get: httpGet, post: vi.fn() },
 }));
 
-vi.mock('./services/localAuth.js', () => ({
-  isLocalToken: (token) => token === 'local-token',
-  getLocalUser: (token) => token === 'local-token'
-    ? { id: 'account-id', name: 'Test Local', email: 'local@example.com' }
-    : null,
-}));
-
 vi.mock('./app/routes.js', () => ({
   ROUTES: [{ path: '/', Page: () => <p>Dashboard berhasil dibuka</p> }],
 }));
@@ -34,18 +27,13 @@ vi.mock('./features/reminders/ReminderProvider.jsx', () => ({
 }));
 
 vi.mock('./features/auth/AuthPage.jsx', () => ({
-  AuthPage: ({ onAuthenticated, onLocalAuthenticated }) => (
-    <>
-      <button type="button" onClick={() => onAuthenticated({
-        token: 'new-token',
-        user: { id: 1, name: 'Test', email: 'test@example.com' },
-      })}>Login test</button>
-      <button type="button" onClick={() => onLocalAuthenticated({
-        token: 'local-token',
-        user: { id: 'account-id', name: 'Test Local', email: 'local@example.com' },
-        local: true,
-      })}>Daftar akun lokal test</button>
-    </>
+  AuthPage: ({ onAuthenticated }) => (
+    <button type="button" onClick={() => onAuthenticated({
+      token: 'new-token',
+      user: { id: 1, name: 'Test', email: 'test@example.com' },
+    })}>
+      Login test
+    </button>
   ),
 }));
 
@@ -87,6 +75,15 @@ describe('App authentication flow', () => {
     expect(await screen.findByRole('button', { name: 'Login test' })).toBeInTheDocument();
   });
 
+  it('clears tokens from the removed browser-local account mode', async () => {
+    globalThis.localStorage.setItem('study-planner-token', 'local-study-planner:old-account');
+    renderApp();
+
+    await waitFor(() => expect(globalThis.localStorage.getItem('study-planner-token')).toBeNull());
+    expect(await screen.findByRole('button', { name: 'Login test' })).toBeInTheDocument();
+    expect(httpGet).not.toHaveBeenCalled();
+  });
+
   it('opens the dashboard from a successful login response without a redundant session request', async () => {
     renderApp();
     fireEvent.click(await screen.findByRole('button', { name: 'Login test' }));
@@ -96,20 +93,4 @@ describe('App authentication flow', () => {
     expect(httpGet).not.toHaveBeenCalled();
   });
 
-  it('opens the dashboard after a local account is registered through the normal auth flow', async () => {
-    renderApp();
-    fireEvent.click(await screen.findByRole('button', { name: 'Daftar akun lokal test' }));
-
-    expect(await screen.findByText('Dashboard berhasil dibuka')).toBeInTheDocument();
-    expect(globalThis.localStorage.getItem('study-planner-token')).toBe('local-token');
-    expect(httpGet).not.toHaveBeenCalled();
-  });
-
-  it('restores a local account session after a page reload without contacting the backend', async () => {
-    globalThis.localStorage.setItem('study-planner-token', 'local-token');
-    renderApp();
-
-    expect(await screen.findByText('Dashboard berhasil dibuka')).toBeInTheDocument();
-    expect(httpGet).not.toHaveBeenCalled();
-  });
 });

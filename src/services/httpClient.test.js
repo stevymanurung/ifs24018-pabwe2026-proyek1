@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AUTH_REQUIRED_EVENT, ApiError, createHttpClient } from './httpClient.js';
-import { registerLocalAccount } from './localAuth.js';
-import { LOCAL_DATA_KEY } from './localDataApi.js';
 
 const jsonResponse = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
@@ -31,28 +29,6 @@ describe('createHttpClient', () => {
       }));
     } finally {
       globalThis.localStorage.removeItem('study-planner-token');
-    }
-  });
-
-  it('routes a local account to browser storage instead of the backend', async () => {
-    globalThis.localStorage.clear();
-    const account = await registerLocalAccount({
-      name: 'Local User',
-      email: 'local@example.com',
-      password: 'password123',
-    });
-    globalThis.localStorage.setItem('study-planner-token', account.token);
-    const fetchImpl = vi.fn();
-    const http = createHttpClient({ baseUrl: '/api', fetchImpl });
-
-    try {
-      await expect(http.get('/auth/me')).resolves.toEqual({ user: account.user });
-      await expect(http.get('/sessions')).resolves.toHaveLength(0);
-      expect(fetchImpl).not.toHaveBeenCalled();
-    } finally {
-      globalThis.localStorage.removeItem('study-planner-token');
-      globalThis.localStorage.removeItem('study-planner-local-users');
-      globalThis.localStorage.removeItem(`${LOCAL_DATA_KEY}:${account.user.id}`);
     }
   });
 

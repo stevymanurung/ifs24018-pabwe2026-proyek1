@@ -1,6 +1,3 @@
-import { isLocalToken } from './localAuth.js';
-import { requestLocalApi } from './localDataApi.js';
-
 /** Error API: membawa status HTTP, kode mesin, dan pesan yang aman ditampilkan kepada pengguna. */
 export class ApiError extends Error {
   constructor(status, code, message, details) {
@@ -21,18 +18,6 @@ export const AUTH_REQUIRED_EVENT = 'study-planner:auth-required';
  */
 export function createHttpClient({ baseUrl, fetchImpl = (...args) => fetch(...args) }) {
   async function request(path, { method = 'GET', body, signal } = {}) {
-    if (isLocalToken(globalThis.localStorage?.getItem('study-planner-token'))) {
-      if (signal?.aborted) throw Object.assign(new Error('Permintaan dibatalkan.'), { name: 'AbortError' });
-      try {
-        return requestLocalApi(path, { method, body });
-      } catch (error) {
-        if (error.status === 401 && path !== '/auth/login' && path !== '/auth/register') {
-          globalThis.dispatchEvent?.(new Event(AUTH_REQUIRED_EVENT));
-        }
-        throw error;
-      }
-    }
-
     let response;
     try {
       response = await fetchImpl(`${baseUrl}${path}`, {

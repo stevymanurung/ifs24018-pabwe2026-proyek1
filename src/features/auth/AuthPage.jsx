@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { http } from '../../services/httpClient.js';
-import { loginLocalAccount, registerLocalAccount } from '../../services/localAuth.js';
 
 function getDatabaseMessage(status) {
   if (status === 'checking') return 'Memeriksa koneksi database...';
@@ -10,12 +9,12 @@ function getDatabaseMessage(status) {
     return 'Backend memakai SQLite. Akun mungkin tidak tersimpan konsisten di deployment; DATABASE_URL PostgreSQL perlu diatur.';
   }
   if (status?.status === 'ok' && !status.dialect) {
-    return 'API aktif. Daftar dan login tetap bisa digunakan; sampai database backend terkonfirmasi, akun dan fitur disimpan di browser ini.';
+    return 'Backend aktif, tetapi versi ini belum melaporkan status database. Pendaftaran/login perlu menggunakan backend dengan PostgreSQL terhubung.';
   }
   return 'Status database belum dapat dipastikan. Periksa koneksi API dan konfigurasi backend.';
 }
 
-export function AuthPage({ onAuthenticated, onLocalAuthenticated }) {
+export function AuthPage({ onAuthenticated }) {
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,74 +38,16 @@ export function AuthPage({ onAuthenticated, onLocalAuthenticated }) {
     event.preventDefault(); setError(''); setBusy(true);
     const credentials = { ...(register ? { name } : {}), email, password };
     try {
-      const localFirst = !(databaseStatus?.database === 'connected' && databaseStatus.dialect === 'postgres')
-        && !(import.meta.env?.DEV && databaseStatus?.database === 'connected' && databaseStatus.dialect === 'sqlite');
-      if (localFirst && onLocalAuthenticated) {
-        if (register) {
-          await onLocalAuthenticated(await registerLocalAccount(credentials));
-          return;
-        }
-        try {
-          await onLocalAuthenticated(await loginLocalAccount({ email, password }));
-          return;
-        } catch (localError) {
-          if (localError.code !== 'INVALID_CREDENTIALS') throw localError;
-          try {
-            await onAuthenticated(await http.post('/auth/login', { email, password }));
-            return;
-          } catch (backendError) {
-            if (backendError.status === 401) {
-              setError('Akun tidak ditemukan di backend maupun browser ini. Pilih Daftar untuk membuat akun dan langsung menguji dashboard serta fitur.');
-            } else {
-              setError(localError.message || backendError.message || 'Tidak dapat memproses akun.');
-            }
-            return;
-          }
-        }
-      }
       const result = await http.post(`/auth/${register ? 'register' : 'login'}`, credentials);
       await onAuthenticated(result);
     } catch (err) {
-      const backendUnavailable = err.code === 'NETWORK_ERROR' || err.status === 404 || err.status >= 500;
       if (register && err.code === 'EMAIL_EXISTS') {
-        try {
-          const result = await http.post('/auth/login', { email, password });
-          await onAuthenticated(result);
-        } catch (loginError) {
-          if (loginError.code !== 'INVALID_CREDENTIALS') {
-            setMode('login');
-            setError(loginError.message || 'Email ini sudah terdaftar. Silakan login.');
-            return;
-          }
-          if (!onLocalAuthenticated) {
-            setMode('login');
-            setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
-            return;
-          }
-          try {
-            await onLocalAuthenticated(await registerLocalAccount(credentials));
-          } catch (localError) {
-            setError(localError.message || 'Tidak dapat membuat sesi lokal.');
-          }
-        }
-      } else if (register && backendUnavailable && onLocalAuthenticated) {
-        try {
-          await onLocalAuthenticated(await registerLocalAccount(credentials));
-        } catch (localError) {
-          setError(localError.message || 'Tidak dapat membuat akun lokal.');
-        }
-      } else if (!register && (backendUnavailable || err.code === 'INVALID_CREDENTIALS') && onLocalAuthenticated) {
-        try {
-          await onLocalAuthenticated(await loginLocalAccount({ email, password }));
-        } catch (localError) {
-          if (localError.code === 'INVALID_CREDENTIALS' && err.code === 'INVALID_CREDENTIALS') {
-            setError('Login backend ditolak. Jika akun hanya tersedia di backend yang belum tersambung, buat akun lewat Daftar agar bisa masuk dan menguji fitur pada browser ini.');
-          } else {
-            setError(localError.message || err.message || 'Tidak dapat memproses akun.');
-          }
-        }
+        setMode('login');
+        setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
       } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.status === 'ok' && !databaseStatus.dialect) {
-        setError('Login ditolak backend. Coba daftar untuk membuat akun dan langsung masuk; bila backend tidak tersedia, akun lokal browser akan digunakan.');
+        setError('Backend menolak login dan health check belum melaporkan database. Pastikan backend production terbaru terhubung ke database PostgreSQL yang menyimpan akun.');
+      } else if (err.code === 'NETWORK_ERROR' || err.status === 404 || err.status >= 500) {
+        setError('Backend tidak dapat memproses akun. Pastikan backend production sudah diperbarui dan database PostgreSQL tersedia; akun tidak disimpan di browser.');
       } else {
         setError(err.message || 'Tidak dapat memproses akun.');
       }
