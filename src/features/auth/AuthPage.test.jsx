@@ -3,14 +3,22 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthPage } from './AuthPage.jsx';
 
-const { httpPost } = vi.hoisted(() => ({ httpPost: vi.fn() }));
+const { httpGet, httpPost } = vi.hoisted(() => ({ httpGet: vi.fn(), httpPost: vi.fn() }));
 
 vi.mock('../../services/httpClient.js', () => ({
-  http: { post: httpPost },
+  http: { get: httpGet, post: httpPost },
 }));
 
 describe('AuthPage', () => {
+  it('explains when the connected backend still reports an old database health response', async () => {
+    httpGet.mockResolvedValueOnce({ status: 'ok' });
+    render(<AuthPage onAuthenticated={vi.fn()} />);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Backend perlu diperbarui');
+  });
+
   it('switches to login when registration reports an existing email', async () => {
+    httpGet.mockResolvedValueOnce({ status: 'ok', database: 'connected', dialect: 'postgres' });
     httpPost.mockRejectedValueOnce(Object.assign(new Error('Email sudah terdaftar. Silakan login.'), {
       code: 'EMAIL_EXISTS',
     }));
@@ -26,5 +34,6 @@ describe('AuthPage', () => {
     expect(screen.getByLabelText('Email')).toHaveValue('test@example.com');
     expect(screen.getByLabelText('Password')).toHaveValue('password123');
     expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Database persisten terhubung.');
   });
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { http } from '../../services/httpClient.js';
 
 export function AuthPage({ onAuthenticated }) {
@@ -8,7 +8,18 @@ export function AuthPage({ onAuthenticated }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [databaseStatus, setDatabaseStatus] = useState('checking');
   const register = mode === 'register';
+
+  useEffect(() => {
+    let active = true;
+    http.get('/health').then((health) => {
+      if (active) setDatabaseStatus(health);
+    }).catch(() => {
+      if (active) setDatabaseStatus('unavailable');
+    });
+    return () => { active = false; };
+  }, []);
 
   async function submit(event) {
     event.preventDefault(); setError(''); setBusy(true);
@@ -46,7 +57,14 @@ export function AuthPage({ onAuthenticated }) {
             <button disabled={busy} className="w-full rounded-xl bg-indigo-700 px-4 py-3.5 font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-800 disabled:cursor-wait disabled:opacity-60">{busy ? 'Memproses...' : register ? 'Daftar akun' : 'Login'}</button>
           </form>
           <p className="mt-6 text-center text-sm text-slate-600">{register ? 'Sudah punya akun?' : 'Belum punya akun?'}{' '}<button type="button" onClick={() => { setMode(register ? 'login' : 'register'); setError(''); }} className="font-semibold text-indigo-700 hover:underline">{register ? 'Login di sini' : 'Daftar sekarang'}</button></p>
-          <p className="mt-6 text-center text-xs leading-5 text-slate-400">Data akun disimpan pada database aplikasi. Jangan gunakan password yang sama dengan akun penting lainnya.</p>
+          <p role="status" className="mt-6 text-center text-xs leading-5 text-slate-500">
+            {databaseStatus === 'checking' && 'Memeriksa koneksi database...'}
+            {databaseStatus === 'unavailable' && 'Status database tidak dapat diperiksa. Coba lagi atau hubungi pengelola aplikasi.'}
+            {typeof databaseStatus === 'object' && databaseStatus.database === 'connected' && databaseStatus.dialect === 'postgres' && 'Database persisten terhubung.'}
+            {typeof databaseStatus === 'object' && databaseStatus.database === 'connected' && databaseStatus.dialect === 'sqlite' && 'Backend memakai SQLite. Akun mungkin tidak tersimpan konsisten di deployment; DATABASE_URL PostgreSQL perlu diatur.'}
+            {typeof databaseStatus === 'object' && databaseStatus.status === 'ok' && !databaseStatus.dialect && 'Backend perlu diperbarui agar status database persisten dapat dipastikan.'}
+            {typeof databaseStatus === 'object' && databaseStatus.database !== 'connected' && 'Database backend belum terhubung. Login dan pendaftaran mungkin tidak tersimpan.'}
+          </p>
         </section>
       </div>
     </main>

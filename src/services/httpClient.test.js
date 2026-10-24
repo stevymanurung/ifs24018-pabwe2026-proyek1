@@ -79,6 +79,23 @@ describe('createHttpClient', () => {
     }
   });
 
+  it('tidak menghapus sesi aktif saat percobaan login ditolak', async () => {
+    const listener = vi.fn();
+    globalThis.addEventListener(AUTH_REQUIRED_EVENT, listener);
+    const http = createHttpClient({
+      baseUrl: '/api',
+      fetchImpl: async () => jsonResponse(401, { error: { code: 'INVALID_CREDENTIALS', message: 'Email atau password tidak tepat.' } }),
+    });
+
+    try {
+      await expect(http.post('/auth/login', { email: 'user@example.com', password: 'wrong' }))
+        .rejects.toMatchObject({ status: 401, code: 'INVALID_CREDENTIALS' });
+      expect(listener).not.toHaveBeenCalled();
+    } finally {
+      globalThis.removeEventListener(AUTH_REQUIRED_EVENT, listener);
+    }
+  });
+
   it('pembatalan (AbortError) diteruskan apa adanya, bukan dianggap error jaringan', async () => {
     const abort = Object.assign(new Error('dibatalkan'), { name: 'AbortError' });
     const http = createHttpClient({ baseUrl: '/api', fetchImpl: async () => { throw abort; } });
