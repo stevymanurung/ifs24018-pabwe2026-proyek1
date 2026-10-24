@@ -14,7 +14,7 @@ export function AuthPage({ onAuthenticated }) {
     event.preventDefault(); setError(''); setBusy(true);
     try {
       const result = await http.post(`/auth/${register ? 'register' : 'login'}`, { ...(register ? { name } : {}), email, password });
-      onAuthenticated(result);
+      await onAuthenticated(result);
     } catch (err) { setError(err.message || 'Tidak dapat memproses akun.'); }
     finally { setBusy(false); }
   }

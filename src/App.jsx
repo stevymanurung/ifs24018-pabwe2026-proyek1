@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import NotFoundPage from './app/NotFoundPage.jsx';
 import { ROUTES } from './app/routes.js';
@@ -10,14 +10,29 @@ import { AUTH_REQUIRED_EVENT, http } from './services/httpClient.js';
 
 export default function App() {
   const [auth, setAuth] = useState({ status: 'checking', user: null });
-  useEffect(() => {
+  const checkSession = useCallback(async () => {
+    setAuth({ status: 'checking', user: null });
     const token = globalThis.localStorage?.getItem('study-planner-token');
-    if (!token) { setAuth({ status: 'signed-out', user: null }); return; }
-    http.get('/auth/me').then(({ user }) => setAuth({ status: 'signed-in', user })).catch(() => {
-      globalThis.localStorage?.removeItem('study-planner-token');
+    if (!token) {
       setAuth({ status: 'signed-out', user: null });
-    });
+      return;
+    }
+    try {
+      const { user } = await http.get('/auth/me');
+      setAuth({ status: 'signed-in', user });
+    } catch (error) {
+      if (error.status === 401) {
+        globalThis.localStorage?.removeItem('study-planner-token');
+        setAuth({ status: 'signed-out', user: null });
+        return;
+      }
+      setAuth({ status: 'unavailable', user: null, error: error.message });
+    }
   }, []);
+
+  useEffect(() => {
+    void checkSession();
+  }, [checkSession]);
 
   useEffect(() => {
     const handleAuthRequired = () => {
@@ -28,9 +43,20 @@ export default function App() {
     return () => globalThis.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
   }, []);
 
-  const signIn = (result) => {
+  const signIn = async (result) => {
     globalThis.localStorage?.setItem('study-planner-token', result.token);
-    setAuth({ status: 'signed-in', user: result.user });
+    try {
+      const { user } = await http.get('/auth/me');
+      setAuth({ status: 'signed-in', user });
+    } catch (error) {
+      if (error.status === 401) {
+        globalThis.localStorage?.removeItem('study-planner-token');
+        setAuth({ status: 'signed-out', user: null });
+      } else {
+        setAuth({ status: 'unavailable', user: null, error: error.message });
+      }
+      throw error;
+    }
   };
   const signOut = async () => {
     try { await http.post('/auth/logout', {}); } catch { /* Token lokal tetap dihapus saat server tidak tersedia. */ }
@@ -39,6 +65,21 @@ export default function App() {
   };
 
   if (auth.status === 'checking') return <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-600">Memeriksa sesi login...</div>;
+  if (auth.status === 'unavailable') {
+    return (
+      <main className="grid min-h-screen place-items-center bg-slate-50 px-4">
+        <section className="w-full max-w-md rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
+          <h1 className="text-lg font-semibold text-slate-900">Belum dapat terhubung ke akun</h1>
+          <p role="alert" className="mt-2 text-sm leading-6 text-slate-600">
+            {auth.error || 'Server sedang bermasalah. Sesi login tetap disimpan; coba lagi sebentar.'}
+          </p>
+          <button type="button" onClick={checkSession} className="mt-5 rounded-xl bg-indigo-700 px-4 py-2.5 font-semibold text-white hover:bg-indigo-800">
+            Coba lagi
+          </button>
+        </section>
+      </main>
+    );
+  }
   if (auth.status === 'signed-out') return <AuthPage onAuthenticated={signIn} />;
   return (
     <PlannerProvider>
