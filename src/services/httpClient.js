@@ -9,7 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-const NETWORK_MESSAGE = 'Tidak dapat terhubung ke server. Periksa koneksi Anda lalu coba lagi.';
+const NETWORK_MESSAGE = 'Tidak dapat terhubung ke server API. Pastikan backend berjalan dan alamat proxy API sudah benar.';
 
 /**
  * Membuat klien HTTP JSON. `fetchImpl` dapat diganti saat pengujian.

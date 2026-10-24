@@ -16,6 +16,22 @@ describe('createHttpClient', () => {
     }));
   });
 
+  it('mengirim token sesi sebagai Bearer token', async () => {
+    const token = 'session-token';
+    globalThis.localStorage.setItem('study-planner-token', token);
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, { user: { id: 1 } }));
+    const http = createHttpClient({ baseUrl: '/api', fetchImpl });
+
+    try {
+      await http.get('/auth/me');
+      expect(fetchImpl).toHaveBeenCalledWith('/api/auth/me', expect.objectContaining({
+        headers: { Authorization: `Bearer ${token}` },
+      }));
+    } finally {
+      globalThis.localStorage.removeItem('study-planner-token');
+    }
+  });
+
   it('respons 204 mengembalikan null', async () => {
     const http = createHttpClient({ baseUrl: '/api', fetchImpl: async () => ({ status: 204, ok: true }) });
     await expect(http.delete('/tasks/1')).resolves.toBeNull();
