@@ -14,7 +14,8 @@ describe('AuthPage', () => {
     httpGet.mockResolvedValueOnce({ status: 'ok' });
     render(<AuthPage onAuthenticated={vi.fn()} />);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Backend perlu diperbarui');
+    expect(await screen.findByRole('status')).toHaveTextContent('Backend belum diperbarui');
+    expect(screen.getByRole('status')).not.toHaveTextContent('Database backend belum terhubung');
   });
 
   it('switches to login when registration reports an existing email', async () => {
