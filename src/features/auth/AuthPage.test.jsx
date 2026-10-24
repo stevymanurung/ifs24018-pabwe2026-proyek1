@@ -18,6 +18,30 @@ describe('AuthPage', () => {
     expect(screen.getByRole('status')).not.toHaveTextContent('Status database belum dapat dipastikan');
   });
 
+  it('authenticates immediately with the account returned by successful registration', async () => {
+    const onAuthenticated = vi.fn();
+    const registration = {
+      token: 'registered-token',
+      user: { id: 7, name: 'Test User', email: 'test@example.com' },
+    };
+    httpGet.mockResolvedValueOnce({ status: 'ok', database: 'connected', dialect: 'postgres' });
+    httpPost.mockResolvedValueOnce(registration);
+    render(<AuthPage onAuthenticated={onAuthenticated} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar sekarang' }));
+    await userEvent.type(screen.getByLabelText('Nama lengkap'), registration.user.name);
+    await userEvent.type(screen.getByLabelText('Email'), registration.user.email);
+    await userEvent.type(screen.getByLabelText('Password'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar akun' }));
+
+    expect(httpPost).toHaveBeenCalledWith('/auth/register', {
+      name: registration.user.name,
+      email: registration.user.email,
+      password: 'password123',
+    });
+    expect(onAuthenticated).toHaveBeenCalledWith(registration);
+    expect(await screen.findByRole('status')).toHaveTextContent('Database persisten terhubung.');
+  });
+
   it('switches to login when registration reports an existing email', async () => {
     httpGet.mockResolvedValueOnce({ status: 'ok', database: 'connected', dialect: 'postgres' });
     httpPost.mockRejectedValueOnce(Object.assign(new Error('Email sudah terdaftar. Silakan login.'), {
