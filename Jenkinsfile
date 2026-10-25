@@ -80,7 +80,7 @@ pipeline {
                         npx ng test --coverage
                     else
                         echo "Framework: React, Next.js, Vue, Nuxt, Svelte, or SvelteKit"
-                        npx vitest run --coverage
+                        npx vitest run --coverage --pool=threads --maxWorkers=1 --minWorkers=1
                     fi
 
                     echo "=== Tests Passed ==="
