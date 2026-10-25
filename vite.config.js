@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
       setupFiles: './src/test/setup.js',
       css: false,
       restoreMocks: true,
+      coverage: {
+        reporter: ['text', 'lcov'],
+      },
     },
   };
 });
