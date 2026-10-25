@@ -6,6 +6,7 @@ import { AppLayout } from './components/layout/AppLayout.jsx';
 import { PlannerProvider } from './context/PlannerProvider.jsx';
 import { ReminderProvider } from './features/reminders/ReminderProvider.jsx';
 import { AuthPage } from './features/auth/AuthPage.jsx';
+import { validateAuthResponse } from './features/auth/authSession.js';
 import { AUTH_REQUIRED_EVENT, http } from './services/httpClient.js';
 
 export default function App() {
@@ -47,11 +48,8 @@ export default function App() {
     globalThis.addEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
     return () => globalThis.removeEventListener(AUTH_REQUIRED_EVENT, handleAuthRequired);
   }, []);
-
   const signIn = (result) => {
-    if (!result?.token || !result?.user) {
-      throw new Error('Respons login dari server tidak lengkap. Coba lagi.');
-    }
+    validateAuthResponse(result);
     globalThis.localStorage?.setItem('study-planner-token', result.token);
     setAuth({ status: 'signed-in', user: result.user });
   };

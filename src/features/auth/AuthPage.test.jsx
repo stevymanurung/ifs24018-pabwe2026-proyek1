@@ -29,6 +29,25 @@ describe('AuthPage', () => {
     expect(screen.getByRole('status')).not.toHaveTextContent('Status database belum dapat dipastikan');
   });
 
+  it('reports an unknown database status and a failed health check', async () => {
+    httpGet.mockResolvedValueOnce({ status: 'starting' });
+    const { unmount } = render(<AuthPage onAuthenticated={vi.fn()} />);
+    expect(await screen.findByRole('status')).toHaveTextContent('Status database belum dapat dipastikan.');
+
+    unmount();
+    httpGet.mockRejectedValueOnce(new Error('Health check gagal'));
+    render(<AuthPage onAuthenticated={vi.fn()} />);
+    expect(await screen.findByRole('status')).toHaveTextContent('Status database tidak dapat diperiksa.');
+  });
+
+  it('warns when the backend uses non-persistent SQLite storage', async () => {
+    httpGet.mockResolvedValueOnce({ status: 'ok', database: 'connected', dialect: 'sqlite' });
+    render(<AuthPage onAuthenticated={vi.fn()} />);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Backend memakai SQLite.');
+    expect(screen.getByRole('status')).toHaveTextContent('DATABASE_URL PostgreSQL perlu diatur.');
+  });
+
   it('authenticates immediately with the account returned by successful registration', async () => {
     const onAuthenticated = vi.fn();
     const registration = {
@@ -85,5 +104,33 @@ describe('AuthPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Login' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('health check belum melaporkan database');
+  });
+
+  it('shows actionable errors for unavailable backend and other login failures', async () => {
+    httpGet.mockResolvedValue({ status: 'ok', database: 'connected', dialect: 'postgres' });
+    httpPost
+      .mockRejectedValueOnce(Object.assign(new Error('Jaringan terputus'), { code: 'NETWORK_ERROR' }))
+      .mockRejectedValueOnce(new Error('Akun tidak dapat digunakan'));
+    render(<AuthPage onAuthenticated={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText('Email'), 'test@example.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Backend tidak dapat memproses akun.');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Akun tidak dapat digunakan');
+  });
+
+  it('uses the fallback error message when a login error has no message', async () => {
+    httpGet.mockResolvedValueOnce({ status: 'ok', database: 'connected', dialect: 'postgres' });
+    httpPost.mockRejectedValueOnce({ code: 'UNEXPECTED_ERROR' });
+    render(<AuthPage onAuthenticated={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText('Email'), 'test@example.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Tidak dapat memproses akun.');
   });
 });

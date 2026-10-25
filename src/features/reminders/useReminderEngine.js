@@ -8,6 +8,17 @@ const CHECK_INTERVAL_MS = 15_000;
 const SNOOZE_MINUTES = 5;
 const TEST_KEY_PREFIX = 'test:';
 
+function addUniqueReminders(current, reminders) {
+  return [
+    ...current,
+    ...reminders.filter((item) => !current.some((existing) => existing.key === item.key)),
+  ];
+}
+
+function getFiredTimes(reminders, nowMs) {
+  return Object.fromEntries(reminders.map((reminder) => [reminder.key, nowMs]));
+}
+
 /**
  * Menjalankan pengingat: memeriksa pemicu secara berkala, menampilkan dialog, membunyikan alarm,
  * dan mengirim notifikasi. Logika waktunya ada di engine.js; hook ini hanya menghubungkannya ke browser.
@@ -29,7 +40,7 @@ export function useReminderEngine({ alarms, sessions, tasks, lead }) {
   const fire = useCallback((reminders) => {
     if (reminders.length === 0) return;
     reminders.forEach(showNotification);
-    setRinging((current) => [...current, ...reminders.filter((item) => !current.some((existing) => existing.key === item.key))]);
+    setRinging((current) => addUniqueReminders(current, reminders));
   }, []);
 
   const check = useCallback(() => {
@@ -39,7 +50,7 @@ export function useReminderEngine({ alarms, sessions, tasks, lead }) {
     const { due: wakeUps, pending } = splitSnoozes(store.current.snoozes, nowMs);
     if (due.length === 0 && wakeUps.length === 0) return;
 
-    const firedNow = Object.fromEntries(due.map((reminder) => [reminder.key, nowMs]));
+    const firedNow = getFiredTimes(due, nowMs);
     store.current = { fired: pruneFired({ ...store.current.fired, ...firedNow }, nowMs), snoozes: pending };
     saveReminderState(store.current);
     fire([...due, ...wakeUps]);
@@ -89,20 +100,19 @@ export function useReminderEngine({ alarms, sessions, tasks, lead }) {
     setRinging([]);
   }, [ringing]);
 
+  const enable = useCallback(async () => {
+    setSoundReady(sound.unlock());
+    setPermission(await requestNotificationPermission());
+  }, [sound]);
+
+  const testRing = useCallback(() => {
+    setSoundReady(sound.unlock());
+    fire([{ key: `${TEST_KEY_PREFIX}${Date.now()}`, title: 'Tes pengingat', text: 'Jika Anda mendengar bunyi, alarm siap dipakai.' }]);
+  }, [sound, fire]);
+
   const controls = useMemo(
-    () => ({
-      soundReady,
-      permission,
-      enable: async () => {
-        setSoundReady(sound.unlock());
-        setPermission(await requestNotificationPermission());
-      },
-      testRing: () => {
-        setSoundReady(sound.unlock());
-        fire([{ key: `${TEST_KEY_PREFIX}${Date.now()}`, title: 'Tes pengingat', text: 'Jika Anda mendengar bunyi, alarm siap dipakai.' }]);
-      },
-    }),
-    [soundReady, permission, sound, fire],
+    () => ({ soundReady, permission, enable, testRing }),
+    [soundReady, permission, enable, testRing],
   );
 
   return { ringing, dismiss, snooze, controls };

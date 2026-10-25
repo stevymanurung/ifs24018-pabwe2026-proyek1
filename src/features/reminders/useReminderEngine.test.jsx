@@ -139,6 +139,22 @@ describe('useReminderEngine', () => {
     expect(requestPermissionMock).toHaveBeenCalledOnce();
   });
 
+  it('checks reminders after becoming visible and skips the check while hidden', () => {
+    const { unmount } = renderHook(() => useReminderEngine(initialData));
+    dueRemindersMock.mockClear();
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(dueRemindersMock).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(dueRemindersMock).toHaveBeenCalledOnce();
+
+    unmount();
+    delete document.hidden;
+  });
+
   it('creates a test ring without snoozing it and cleans up browser listeners and timers', () => {
     const removeListener = vi.spyOn(globalThis, 'removeEventListener');
     const { result, unmount } = renderHook(() => useReminderEngine(initialData));

@@ -3,11 +3,14 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Outlet } from 'react-router-dom';
 import App from './App.jsx';
 
-const { httpGet } = vi.hoisted(() => ({ httpGet: vi.fn() }));
+const { httpGet, httpPost } = vi.hoisted(() => ({
+  httpGet: vi.fn(),
+  httpPost: vi.fn(),
+}));
 
 vi.mock('./services/httpClient.js', () => ({
   AUTH_REQUIRED_EVENT: 'study-planner:auth-required',
-  http: { get: httpGet, post: vi.fn() },
+  http: { get: httpGet, post: httpPost },
 }));
 
 vi.mock('./app/routes.js', () => ({
@@ -28,12 +31,14 @@ vi.mock('./features/reminders/ReminderProvider.jsx', () => ({
 
 vi.mock('./features/auth/AuthPage.jsx', () => ({
   AuthPage: ({ onAuthenticated }) => (
-    <button type="button" onClick={() => onAuthenticated({
-      token: 'new-token',
-      user: { id: 1, name: 'Test', email: 'test@example.com' },
-    })}>
-      Login test
-    </button>
+    <>
+      <button type="button" onClick={() => onAuthenticated({
+        token: 'new-token',
+        user: { id: 1, name: 'Test', email: 'test@example.com' },
+      })}>
+        Login test
+      </button>
+    </>
   ),
 }));
 
@@ -47,6 +52,7 @@ describe('App authentication flow', () => {
   beforeEach(() => {
     globalThis.localStorage.clear();
     httpGet.mockReset();
+    httpPost.mockReset();
   });
 
   it('retains the saved token during temporary API errors and retries the existing session', async () => {
@@ -91,6 +97,34 @@ describe('App authentication flow', () => {
     expect(await screen.findByText('Dashboard berhasil dibuka')).toBeInTheDocument();
     expect(globalThis.localStorage.getItem('study-planner-token')).toBe('new-token');
     expect(httpGet).not.toHaveBeenCalled();
+  });
+
+  it('logs out after a successful backend request and handles auth-required events', async () => {
+    httpPost.mockResolvedValueOnce({});
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'Login test' }));
+    expect(await screen.findByRole('button', { name: 'Keluar' })).toBeInTheDocument();
+    expect(globalThis.localStorage.getItem('study-planner-token')).toBe('new-token');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keluar' }));
+    await waitFor(() => expect(globalThis.localStorage.getItem('study-planner-token')).toBeNull());
+    expect(httpPost).toHaveBeenCalledWith('/auth/logout', {});
+    expect(await screen.findByRole('button', { name: 'Login test' })).toBeInTheDocument();
+
+    globalThis.localStorage.setItem('study-planner-token', 'new-token');
+    fireEvent.click(await screen.findByRole('button', { name: 'Login test' }));
+    globalThis.dispatchEvent(new Event('study-planner:auth-required'));
+    await waitFor(() => expect(globalThis.localStorage.getItem('study-planner-token')).toBeNull());
+  });
+
+  it('clears the local session when the backend logout request fails', async () => {
+    httpPost.mockRejectedValueOnce(new Error('Backend tidak tersedia'));
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'Login test' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Keluar' }));
+
+    await waitFor(() => expect(globalThis.localStorage.getItem('study-planner-token')).toBeNull());
+    expect(await screen.findByRole('button', { name: 'Login test' })).toBeInTheDocument();
   });
 
 });
