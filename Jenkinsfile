@@ -26,11 +26,7 @@ pipeline {
             }
 
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[url: 'https://github.com/stevymanurung/ifs24018-pabwe2026-proyek1.git']]
-                ])
+                checkout scm
             }
         }
 
@@ -80,7 +76,7 @@ pipeline {
                         npx ng test --coverage
                     else
                         echo "Framework: React, Next.js, Vue, Nuxt, Svelte, or SvelteKit"
-                        npx vitest run --coverage --pool=threads --maxWorkers=1 --minWorkers=1
+                        npx vitest run --coverage
                     fi
 
                     echo "=== Tests Passed ==="
