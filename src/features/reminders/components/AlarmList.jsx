@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { EmptyState } from '../../../components/ui/EmptyState.jsx';
 import { AlarmItem } from './AlarmItem.jsx';
 
@@ -12,3 +13,15 @@ export function AlarmList({ alarms, onToggle, onRemove }) {
     </ul>
   );
 }
+
+AlarmList.propTypes = {
+  alarms: PropTypes.arrayOf(PropTypes.shape({
+    days: PropTypes.arrayOf(PropTypes.number).isRequired,
+    enabled: PropTypes.bool.isRequired,
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    label: PropTypes.string.isRequired,
+    time: PropTypes.string.isRequired,
+  })).isRequired,
+  onRemove: PropTypes.func.isRequired,
+  onToggle: PropTypes.func.isRequired,
+};

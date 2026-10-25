@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 
 /** Satu baris tugas. `overdue` dihitung oleh pemanggil sehingga komponen ini murni tampilan. */
@@ -27,3 +28,17 @@ export function TaskItem({ task, overdue, onToggle, onRemove }) {
     </li>
   );
 }
+
+TaskItem.propTypes = {
+  onRemove: PropTypes.func.isRequired,
+  onToggle: PropTypes.func.isRequired,
+  overdue: PropTypes.bool.isRequired,
+  task: PropTypes.shape({
+    course: PropTypes.string,
+    done: PropTypes.bool.isRequired,
+    dueDate: PropTypes.string,
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    remindAt: PropTypes.string,
+    title: PropTypes.string.isRequired,
+  }).isRequired,
+};

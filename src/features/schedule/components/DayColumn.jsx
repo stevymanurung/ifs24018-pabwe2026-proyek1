@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { SessionItem } from './SessionItem.jsx';
 
 export function DayColumn({ name, sessions, onRemove }) {
@@ -14,3 +15,15 @@ export function DayColumn({ name, sessions, onRemove }) {
     </section>
   );
 }
+
+DayColumn.propTypes = {
+  name: PropTypes.string.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  sessions: PropTypes.arrayOf(PropTypes.shape({
+    course: PropTypes.string.isRequired,
+    end: PropTypes.string.isRequired,
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    room: PropTypes.string,
+    start: PropTypes.string.isRequired,
+  })).isRequired,
+};

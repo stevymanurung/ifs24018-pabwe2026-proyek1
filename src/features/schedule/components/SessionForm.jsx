@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 import { FormError } from '../../../components/ui/FormError.jsx';
 import { SelectField } from '../../../components/ui/SelectField.jsx';
@@ -17,6 +18,10 @@ export function SessionForm({ onCreate }) {
     event.preventDefault();
     if (await submit({ ...values, day: Number(values.day) })) reset();
   }
+
+  SessionForm.propTypes = {
+    onCreate: PropTypes.func.isRequired,
+  };
 
   return (
     <form onSubmit={handleSubmit} noValidate>

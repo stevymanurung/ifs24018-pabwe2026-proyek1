@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '../../../components/ui/EmptyState.jsx';
 import { CHART_COLORS } from '../chartColors.js';
@@ -25,3 +26,11 @@ export function CourseChart({ data }) {
     </div>
   );
 }
+
+CourseChart.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.shape({
+    course: PropTypes.string.isRequired,
+    done: PropTypes.number.isRequired,
+    pending: PropTypes.number.isRequired,
+  })).isRequired,
+};

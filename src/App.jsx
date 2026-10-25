@@ -36,7 +36,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    void checkSession();
+    checkSession();
   }, [checkSession]);
 
   useEffect(() => {

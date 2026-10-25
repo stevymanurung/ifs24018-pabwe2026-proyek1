@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 import { TASK_FILTERS } from '../../../lib/tasks.js';
 
@@ -18,3 +19,8 @@ export function TaskFilter({ value, onChange }) {
     </div>
   );
 }
+
+TaskFilter.propTypes = {
+  onChange: PropTypes.func.isRequired,
+  value: PropTypes.string.isRequired,
+};

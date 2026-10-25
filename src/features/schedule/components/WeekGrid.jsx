@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { DayColumn } from './DayColumn.jsx';
 
 export function WeekGrid({ days, onRemove }) {
@@ -9,3 +10,12 @@ export function WeekGrid({ days, onRemove }) {
     </div>
   );
 }
+
+WeekGrid.propTypes = {
+  days: PropTypes.arrayOf(PropTypes.shape({
+    day: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+    sessions: PropTypes.arrayOf(PropTypes.object).isRequired,
+  })).isRequired,
+  onRemove: PropTypes.func.isRequired,
+};

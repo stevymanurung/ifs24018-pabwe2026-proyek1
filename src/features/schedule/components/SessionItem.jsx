@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 
 export function SessionItem({ session, onRemove }) {
@@ -16,3 +17,14 @@ export function SessionItem({ session, onRemove }) {
     </li>
   );
 }
+
+SessionItem.propTypes = {
+  onRemove: PropTypes.func.isRequired,
+  session: PropTypes.shape({
+    course: PropTypes.string.isRequired,
+    end: PropTypes.string.isRequired,
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    room: PropTypes.string,
+    start: PropTypes.string.isRequired,
+  }).isRequired,
+};

@@ -1,8 +1,13 @@
 import { Component } from 'react';
+import PropTypes from 'prop-types';
 import { ErrorBanner } from './ui/ErrorBanner.jsx';
 
 /** Menangkap error saat render agar satu halaman yang rusak tidak mematikan seluruh aplikasi. */
 export class ErrorBoundary extends Component {
+  static propTypes = {
+    children: PropTypes.node.isRequired,
+  };
+
   state = { hasError: false };
 
   static getDerivedStateFromError() {

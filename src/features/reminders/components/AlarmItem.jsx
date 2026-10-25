@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 import { DAY_SHORT_NAMES } from '../../../lib/time.js';
 
@@ -24,3 +25,15 @@ export function AlarmItem({ alarm, onToggle, onRemove }) {
     </li>
   );
 }
+
+AlarmItem.propTypes = {
+  alarm: PropTypes.shape({
+    days: PropTypes.arrayOf(PropTypes.number).isRequired,
+    enabled: PropTypes.bool.isRequired,
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    label: PropTypes.string.isRequired,
+    time: PropTypes.string.isRequired,
+  }).isRequired,
+  onRemove: PropTypes.func.isRequired,
+  onToggle: PropTypes.func.isRequired,
+};

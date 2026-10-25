@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { describeNextSession } from '../../lib/time.js';
 
 /** Widget "Kuliah berikutnya" di dasar sidebar. */
@@ -11,3 +12,16 @@ export function NextClassCard({ next }) {
     </div>
   );
 }
+
+NextClassCard.propTypes = {
+  next: PropTypes.shape({
+    session: PropTypes.shape({
+      course: PropTypes.string.isRequired,
+      day: PropTypes.number.isRequired,
+      end: PropTypes.string.isRequired,
+      room: PropTypes.string,
+      start: PropTypes.string.isRequired,
+    }).isRequired,
+    daysAhead: PropTypes.number.isRequired,
+  }),
+};

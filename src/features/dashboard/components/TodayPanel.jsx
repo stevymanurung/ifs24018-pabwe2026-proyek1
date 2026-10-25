@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 const CHIP_CLASSES = {
   indigo: 'bg-indigo-50 text-indigo-700',
   amber: 'bg-amber-50 text-amber-700',
@@ -12,6 +14,12 @@ function Entry({ chip, tone, text }) {
   );
 }
 
+Entry.propTypes = {
+  chip: PropTypes.string.isRequired,
+  text: PropTypes.string.isRequired,
+  tone: PropTypes.oneOf(Object.keys(CHIP_CLASSES)).isRequired,
+};
+
 function Section({ title, empty, children, hasItems }) {
   return (
     <div>
@@ -20,6 +28,13 @@ function Section({ title, empty, children, hasItems }) {
     </div>
   );
 }
+
+Section.propTypes = {
+  children: PropTypes.node,
+  empty: PropTypes.string.isRequired,
+  hasItems: PropTypes.bool.isRequired,
+  title: PropTypes.string.isRequired,
+};
 
 /** Ringkasan harian: jadwal hari ini dan tugas yang jatuh tempo 7 hari ke depan. */
 export function TodayPanel({ today, upcomingTasks }) {
@@ -38,3 +53,20 @@ export function TodayPanel({ today, upcomingTasks }) {
     </div>
   );
 }
+
+TodayPanel.propTypes = {
+  today: PropTypes.shape({
+    dayName: PropTypes.string.isRequired,
+    sessions: PropTypes.arrayOf(PropTypes.shape({
+      course: PropTypes.string.isRequired,
+      end: PropTypes.string.isRequired,
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+      start: PropTypes.string.isRequired,
+    })).isRequired,
+  }).isRequired,
+  upcomingTasks: PropTypes.arrayOf(PropTypes.shape({
+    dueDate: PropTypes.string.isRequired,
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    title: PropTypes.string.isRequired,
+  })).isRequired,
+};

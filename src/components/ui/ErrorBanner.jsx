@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from './Button.jsx';
 
 export function ErrorBanner({ message, onRetry }) {
@@ -12,3 +13,8 @@ export function ErrorBanner({ message, onRetry }) {
     </div>
   );
 }
+
+ErrorBanner.propTypes = {
+  message: PropTypes.node.isRequired,
+  onRetry: PropTypes.func,
+};

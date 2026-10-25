@@ -26,7 +26,11 @@ pipeline {
             }
 
             steps {
-                checkout scm
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/stevymanurung/ifs24018-pabwe2026-proyek1.git']]
+                ])
             }
         }
 

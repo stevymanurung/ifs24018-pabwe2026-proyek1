@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 const VARIANTS = {
   primary: 'bg-indigo-600 text-white hover:bg-indigo-700',
   ghost: 'bg-slate-100 text-slate-700 hover:bg-slate-200',
@@ -17,3 +19,11 @@ const BASE =
 export function Button({ variant = 'primary', size = 'md', type = 'button', className = '', ...props }) {
   return <button type={type} className={`${BASE} ${SIZES[size]} ${VARIANTS[variant]} ${className}`} {...props} />;
 }
+
+Button.propTypes = {
+  variant: PropTypes.oneOf(Object.keys(VARIANTS)),
+  size: PropTypes.oneOf(Object.keys(SIZES)),
+  type: PropTypes.oneOf(['button', 'submit', 'reset']),
+  className: PropTypes.string,
+  children: PropTypes.node,
+};

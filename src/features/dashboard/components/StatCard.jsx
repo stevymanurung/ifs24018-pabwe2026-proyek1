@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 const ACCENTS = {
   indigo: 'border-indigo-500',
   emerald: 'border-emerald-500',
@@ -16,3 +18,10 @@ export function StatCard({ label, value, unit, accent }) {
     </div>
   );
 }
+
+StatCard.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+  unit: PropTypes.string,
+  accent: PropTypes.oneOf(Object.keys(ACCENTS)).isRequired,
+};

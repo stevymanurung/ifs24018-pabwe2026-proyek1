@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 /** Ruang pesan error tetap disediakan (min-h) supaya tata letak tidak melompat saat pesan muncul. */
 export function FormError({ message }) {
   return (
@@ -6,3 +8,7 @@ export function FormError({ message }) {
     </p>
   );
 }
+
+FormError.propTypes = {
+  message: PropTypes.string,
+};

@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 /** Ikon SVG sederhana. Semuanya dekoratif (aria-hidden); label teks selalu ada di sebelahnya. */
 function Icon({ children, className = 'h-5 w-5 shrink-0' }) {
   return (
@@ -6,6 +8,11 @@ function Icon({ children, className = 'h-5 w-5 shrink-0' }) {
     </svg>
   );
 }
+
+Icon.propTypes = {
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+};
 
 const path = (d) => <path strokeLinecap="round" strokeLinejoin="round" d={d} />;
 

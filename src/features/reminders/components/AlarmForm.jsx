@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 import { FormError } from '../../../components/ui/FormError.jsx';
 import { TextField } from '../../../components/ui/TextField.jsx';
@@ -19,6 +20,10 @@ export function AlarmForm({ onCreate }) {
       reset();
       setDays([]);
     }
+
+    AlarmForm.propTypes = {
+      onCreate: PropTypes.func.isRequired,
+    };
   }
 
   return (

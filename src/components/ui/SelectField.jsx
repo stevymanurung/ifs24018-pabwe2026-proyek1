@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import PropTypes from 'prop-types';
 import { FIELD_CLASS, LABEL_CLASS } from './fieldStyles.js';
 
 export function SelectField({ label, className = '', children, ...selectProps }) {
@@ -14,3 +15,9 @@ export function SelectField({ label, className = '', children, ...selectProps })
     </div>
   );
 }
+
+SelectField.propTypes = {
+  label: PropTypes.string.isRequired,
+  className: PropTypes.string,
+  children: PropTypes.node,
+};

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { http } from '../../services/httpClient.js';
 
 function getDatabaseMessage(status) {
@@ -23,6 +24,8 @@ export function AuthPage({ onAuthenticated }) {
   const [busy, setBusy] = useState(false);
   const [databaseStatus, setDatabaseStatus] = useState('checking');
   const register = mode === 'register';
+  let submitLabel = register ? 'Daftar akun' : 'Login';
+  if (busy) submitLabel = 'Memproses...';
 
   useEffect(() => {
     let active = true;
@@ -72,12 +75,16 @@ export function AuthPage({ onAuthenticated }) {
             <label className="block text-sm font-medium text-slate-700">Email<input id="username" name="username" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" placeholder="nama@email.com" /></label>
             <label className="block text-sm font-medium text-slate-700">Password<input id="password" name="password" required minLength={8} maxLength={128} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={register ? 'new-password' : 'current-password'} className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" placeholder="Minimal 8 karakter" /></label>
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-            <button id="btn-submit" type="submit" disabled={busy} className="w-full rounded-xl bg-indigo-700 px-4 py-3.5 font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-800 disabled:cursor-wait disabled:opacity-60">{busy ? 'Memproses...' : register ? 'Daftar akun' : 'Login'}</button>
+            <button id="btn-submit" type="submit" disabled={busy} className="w-full rounded-xl bg-indigo-700 px-4 py-3.5 font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-800 disabled:cursor-wait disabled:opacity-60">{submitLabel}</button>
           </form>
           <p className="mt-6 text-center text-sm text-slate-600">{register ? 'Sudah punya akun?' : 'Belum punya akun?'}{' '}<button type="button" onClick={() => { setMode(register ? 'login' : 'register'); setError(''); }} className="font-semibold text-indigo-700 hover:underline">{register ? 'Login di sini' : 'Daftar sekarang'}</button></p>
-          <p role="status" className="mt-6 text-center text-xs leading-5 text-slate-500">{getDatabaseMessage(databaseStatus)}</p>
+          <output aria-live="polite" className="mt-6 block text-center text-xs leading-5 text-slate-500">{getDatabaseMessage(databaseStatus)}</output>
         </section>
       </div>
     </main>
   );
 }
+
+AuthPage.propTypes = {
+  onAuthenticated: PropTypes.func.isRequired,
+};

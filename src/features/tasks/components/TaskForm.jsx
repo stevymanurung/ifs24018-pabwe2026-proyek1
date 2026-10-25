@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 import { FormError } from '../../../components/ui/FormError.jsx';
 import { TextField } from '../../../components/ui/TextField.jsx';
@@ -16,6 +17,11 @@ export function TaskForm({ courses, onCreate }) {
     event.preventDefault();
     if (await submit(values)) reset();
   }
+
+  TaskForm.propTypes = {
+    courses: PropTypes.arrayOf(PropTypes.string).isRequired,
+    onCreate: PropTypes.func.isRequired,
+  };
 
   return (
     <form onSubmit={handleSubmit} noValidate>

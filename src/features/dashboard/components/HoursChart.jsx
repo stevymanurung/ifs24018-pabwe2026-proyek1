@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '../../../components/ui/EmptyState.jsx';
 import { formatHours } from '../../../lib/format.js';
@@ -21,3 +22,10 @@ export function HoursChart({ data }) {
     </div>
   );
 }
+
+HoursChart.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.shape({
+    hours: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+  })).isRequired,
+};

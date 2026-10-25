@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 
 /** Dialog dering memakai elemen <dialog> bawaan: fokus terkunci dan tombol Esc ditangani browser. */
@@ -17,6 +18,16 @@ export function RingDialog({ reminders, onDismiss, onSnooze }) {
     event.preventDefault(); // Esc dianggap "matikan", bukan menutup tanpa menghentikan bunyi
     onDismiss();
   }
+
+  RingDialog.propTypes = {
+    onDismiss: PropTypes.func.isRequired,
+    onSnooze: PropTypes.func.isRequired,
+    reminders: PropTypes.arrayOf(PropTypes.shape({
+      key: PropTypes.string.isRequired,
+      text: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+    })).isRequired,
+  };
 
   return (
     <dialog

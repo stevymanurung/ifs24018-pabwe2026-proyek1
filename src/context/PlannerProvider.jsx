@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { useCollection } from '../hooks/useCollection.js';
 import { useDashboard } from '../hooks/useDashboard.js';
 import { useSettings } from '../hooks/useSettings.js';
@@ -22,3 +23,7 @@ export function PlannerProvider({ children }) {
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;
 }
+
+PlannerProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};

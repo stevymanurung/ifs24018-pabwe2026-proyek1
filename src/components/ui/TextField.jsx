@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import PropTypes from 'prop-types';
 import { FIELD_CLASS, LABEL_CLASS } from './fieldStyles.js';
 
 /** Input berlabel. `id` dibuat otomatis sehingga label selalu terhubung ke input (aksesibilitas). */
@@ -13,3 +14,8 @@ export function TextField({ label, className = '', ...inputProps }) {
     </div>
   );
 }
+
+TextField.propTypes = {
+  label: PropTypes.string.isRequired,
+  className: PropTypes.string,
+};

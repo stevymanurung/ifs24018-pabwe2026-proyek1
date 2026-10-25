@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { EmptyState } from '../../../components/ui/EmptyState.jsx';
 import { STATUS_COLORS } from '../chartColors.js';
@@ -22,3 +23,11 @@ export function StatusChart({ data }) {
     </div>
   );
 }
+
+StatusChart.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.shape({
+    key: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    value: PropTypes.number.isRequired,
+  })).isRequired,
+};

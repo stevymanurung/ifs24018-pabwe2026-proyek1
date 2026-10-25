@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { NavLink } from 'react-router-dom';
 import { ROUTES } from '../../app/routes.js';
 import { usePlanner } from '../../hooks/usePlanner.js';
@@ -60,3 +61,8 @@ export function Sidebar({ open, onNavigate }) {
     </aside>
   );
 }
+
+Sidebar.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onNavigate: PropTypes.func.isRequired,
+};

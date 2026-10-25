@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Button } from '../../../components/ui/Button.jsx';
 import { SelectField } from '../../../components/ui/SelectField.jsx';
 
@@ -33,10 +34,21 @@ export function ReminderSettings({ lead, onChangeLead, controls }) {
           ))}
         </SelectField>
       </div>
-      <p role="status" className="mt-3 text-sm text-slate-500">
+      <output aria-live="polite" className="mt-3 block text-sm text-slate-500">
         Bunyi alarm: {controls.soundReady ? 'aktif' : 'belum diaktifkan (klik "Aktifkan pengingat")'}. Notifikasi browser:{' '}
         {PERMISSION_TEXT[controls.permission] ?? controls.permission}.
-      </p>
+      </output>
     </div>
   );
 }
+
+ReminderSettings.propTypes = {
+  controls: PropTypes.shape({
+    enable: PropTypes.func.isRequired,
+    permission: PropTypes.oneOf(Object.keys(PERMISSION_TEXT)).isRequired,
+    soundReady: PropTypes.bool.isRequired,
+    testRing: PropTypes.func.isRequired,
+  }).isRequired,
+  lead: PropTypes.number.isRequired,
+  onChangeLead: PropTypes.func.isRequired,
+};

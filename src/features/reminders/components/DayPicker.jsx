@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { DAY_SHORT_NAMES } from '../../../lib/time.js';
 
 /** Pilihan hari berupa chip; `value` adalah daftar indeks hari (0 = Senin) yang terpilih. */
@@ -18,3 +19,8 @@ export function DayPicker({ value, onChange }) {
     </fieldset>
   );
 }
+
+DayPicker.propTypes = {
+  onChange: PropTypes.func.isRequired,
+  value: PropTypes.arrayOf(PropTypes.number).isRequired,
+};

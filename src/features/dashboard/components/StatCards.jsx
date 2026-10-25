@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { formatHours } from '../../../lib/format.js';
 import { StatCard } from './StatCard.jsx';
 
@@ -11,3 +12,12 @@ export function StatCards({ totals }) {
     </div>
   );
 }
+
+StatCards.propTypes = {
+  totals: PropTypes.shape({
+    done: PropTypes.number.isRequired,
+    overdue: PropTypes.number.isRequired,
+    pending: PropTypes.number.isRequired,
+    weeklyHours: PropTypes.number.isRequired,
+  }).isRequired,
+};

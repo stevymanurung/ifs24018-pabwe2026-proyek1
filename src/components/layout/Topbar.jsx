@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { formatLongDate } from '../../lib/time.js';
 import { Button } from '../ui/Button.jsx';
 import { MenuIcon } from '../ui/icons.jsx';
@@ -13,3 +14,8 @@ export function Topbar({ title, onMenuClick }) {
     </header>
   );
 }
+
+Topbar.propTypes = {
+  title: PropTypes.string.isRequired,
+  onMenuClick: PropTypes.func.isRequired,
+};

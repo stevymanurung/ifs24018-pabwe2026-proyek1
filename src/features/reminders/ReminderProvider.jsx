@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { usePlanner } from '../../hooks/usePlanner.js';
 import { RingDialog } from './components/RingDialog.jsx';
 import { ReminderContext } from './reminderContext.js';
@@ -20,3 +21,7 @@ export function ReminderProvider({ children }) {
     </ReminderContext.Provider>
   );
 }
+
+ReminderProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
