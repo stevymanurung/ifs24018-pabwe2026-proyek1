@@ -25,14 +25,16 @@ const alarmTriggers = (alarms, date) =>
     }));
 
 const sessionTriggers = (sessions, date, lead) =>
-  sessions
-    .filter((session) => session.day === dayIndex(date))
-    .map((session) => ({
+  sessions.filter((session) => session.day === dayIndex(date)).map((session) => {
+    const room = session.room ? ` di ${session.room}` : '';
+    const text = `${session.course} mulai ${session.start}${room} (${lead} menit lagi)`;
+    return {
       key: `session:${session.id}:${toDateString(date)}:${lead}`,
       title: 'Kuliah segera dimulai',
-      text: `${session.course} mulai ${session.start}${session.room ? ` di ${session.room}` : ''} (${lead} menit lagi)`,
+      text,
       triggerMs: atMinute(date, toMinutes(session.start) - lead),
-    }));
+    };
+  });
 
 const taskTriggers = (tasks, date) =>
   tasks

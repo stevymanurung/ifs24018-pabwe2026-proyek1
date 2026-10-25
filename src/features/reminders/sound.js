@@ -13,7 +13,7 @@ export function createAlarmSound() {
 
   function unlock() {
     try {
-      const AudioContextClass = window.AudioContext ?? window.webkitAudioContext;
+      const AudioContextClass = globalThis.AudioContext ?? globalThis.webkitAudioContext;
       if (!AudioContextClass) return false;
       context ??= new AudioContextClass();
       if (context.state === 'suspended') context.resume();

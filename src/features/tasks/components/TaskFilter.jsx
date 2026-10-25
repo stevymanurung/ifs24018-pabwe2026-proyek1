@@ -4,7 +4,8 @@ import { TASK_FILTERS } from '../../../lib/tasks.js';
 
 export function TaskFilter({ value, onChange }) {
   return (
-    <div className="mt-3 flex gap-2" role="group" aria-label="Filter tugas">
+    <fieldset className="mt-3 flex gap-2">
+      <legend className="sr-only">Filter tugas</legend>
       {TASK_FILTERS.map((filter) => (
         <Button
           key={filter.value}
@@ -16,7 +17,7 @@ export function TaskFilter({ value, onChange }) {
           {filter.label}
         </Button>
       ))}
-    </div>
+    </fieldset>
   );
 }
 

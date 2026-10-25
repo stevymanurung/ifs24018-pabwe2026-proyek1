@@ -25,7 +25,17 @@ export function AuthPage({ onAuthenticated }) {
   const [databaseStatus, setDatabaseStatus] = useState('checking');
   const register = mode === 'register';
   let submitLabel = register ? 'Daftar akun' : 'Login';
+  let heading = 'Selamat datang kembali';
+  let description = 'Login untuk melanjutkan rencana belajarmu.';
+  let modePrompt = 'Belum punya akun?';
+  let modeAction = 'Daftar sekarang';
   if (busy) submitLabel = 'Memproses...';
+  if (register) {
+    heading = 'Buat akun baru';
+    description = 'Daftar untuk menyimpan jadwal dan tugasmu sendiri.';
+    modePrompt = 'Sudah punya akun?';
+    modeAction = 'Login di sini';
+  }
 
   useEffect(() => {
     let active = true;
@@ -43,16 +53,16 @@ export function AuthPage({ onAuthenticated }) {
     try {
       const result = await http.post(`/auth/${register ? 'register' : 'login'}`, credentials);
       await onAuthenticated(result);
-    } catch (err) {
-      if (register && err.code === 'EMAIL_EXISTS') {
+    } catch (error_) {
+      if (register && error_.code === 'EMAIL_EXISTS') {
         setMode('login');
         setError('Email ini sudah terdaftar. Silakan login dengan akun yang sama.');
-      } else if (!register && err.code === 'INVALID_CREDENTIALS' && databaseStatus?.status === 'ok' && !databaseStatus.dialect) {
+      } else if (!register && error_.code === 'INVALID_CREDENTIALS' && databaseStatus?.status === 'ok' && !databaseStatus.dialect) {
         setError('Backend menolak login dan health check belum melaporkan database. Pastikan backend production terbaru terhubung ke database PostgreSQL yang menyimpan akun.');
-      } else if (err.code === 'NETWORK_ERROR' || err.status === 404 || err.status >= 500) {
+      } else if (error_.code === 'NETWORK_ERROR' || error_.status === 404 || error_.status >= 500) {
         setError('Backend tidak dapat memproses akun. Pastikan backend production sudah diperbarui dan database PostgreSQL tersedia; akun tidak disimpan di browser.');
       } else {
-        setError(err.message || 'Tidak dapat memproses akun.');
+        setError(error_.message || 'Tidak dapat memproses akun.');
       }
     }
     finally { setBusy(false); }
@@ -68,8 +78,8 @@ export function AuthPage({ onAuthenticated }) {
         <section className="p-7 sm:p-10">
           <div className="mb-8 md:hidden"><p className="text-sm font-bold uppercase tracking-widest text-indigo-700">Study Planner</p></div>
           <p className="text-sm font-semibold text-indigo-700">AKUN PENGGUNA</p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{register ? 'Buat akun baru' : 'Selamat datang kembali'}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{register ? 'Daftar untuk menyimpan jadwal dan tugasmu sendiri.' : 'Login untuk melanjutkan rencana belajarmu.'}</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{heading}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
           <form onSubmit={submit} className="mt-7 space-y-4">
             {register && <label className="block text-sm font-medium text-slate-700">Nama lengkap<input required minLength={2} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" placeholder="Nama kamu" /></label>}
             <label className="block text-sm font-medium text-slate-700">Email<input id="username" name="username" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100" placeholder="nama@email.com" /></label>
@@ -77,7 +87,7 @@ export function AuthPage({ onAuthenticated }) {
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
             <button id="btn-submit" type="submit" disabled={busy} className="w-full rounded-xl bg-indigo-700 px-4 py-3.5 font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-800 disabled:cursor-wait disabled:opacity-60">{submitLabel}</button>
           </form>
-          <p className="mt-6 text-center text-sm text-slate-600">{register ? 'Sudah punya akun?' : 'Belum punya akun?'}{' '}<button type="button" onClick={() => { setMode(register ? 'login' : 'register'); setError(''); }} className="font-semibold text-indigo-700 hover:underline">{register ? 'Login di sini' : 'Daftar sekarang'}</button></p>
+          <p className="mt-6 text-center text-sm text-slate-600">{modePrompt}{' '}<button type="button" onClick={() => { setMode(register ? 'login' : 'register'); setError(''); }} className="font-semibold text-indigo-700 hover:underline">{modeAction}</button></p>
           <output aria-live="polite" className="mt-6 block text-center text-xs leading-5 text-slate-500">{getDatabaseMessage(databaseStatus)}</output>
         </section>
       </div>

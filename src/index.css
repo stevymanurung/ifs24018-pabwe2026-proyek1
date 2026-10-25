@@ -7,7 +7,7 @@
   75% { transform: rotate(14deg); }
 }
 
-@utility animate-bell {
+.animate-bell {
   display: inline-block;
   transform-origin: 50% 10%;
   animation: bell-shake 0.6s infinite;

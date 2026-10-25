@@ -9,7 +9,7 @@ export function HoursChart({ data }) {
   if (data.every((day) => day.hours === 0)) return <EmptyState>Belum ada jadwal. Tambahkan di menu Jadwal.</EmptyState>;
 
   return (
-    <div className="h-64" role="img" aria-label="Grafik batang jam belajar per hari">
+    <figure className="h-64" aria-label="Grafik batang jam belajar per hari">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -19,7 +19,7 @@ export function HoursChart({ data }) {
           <Bar dataKey="hours" fill={CHART_COLORS.primary} radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </figure>
   );
 }
 

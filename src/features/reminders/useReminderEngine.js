@@ -48,9 +48,9 @@ export function useReminderEngine({ alarms, sessions, tasks, lead }) {
   useEffect(() => {
     check();
     const timer = setInterval(check, CHECK_INTERVAL_MS);
-    const checkWhenVisible = () => {
+    function checkWhenVisible() {
       if (!document.hidden) check();
-    };
+    }
     document.addEventListener('visibilitychange', checkWhenVisible);
     return () => {
       clearInterval(timer);
@@ -67,12 +67,15 @@ export function useReminderEngine({ alarms, sessions, tasks, lead }) {
 
   // Setelah reload, interaksi pertama di halaman otomatis mengaktifkan suara agar alarm tidak berbunyi hening.
   useEffect(() => {
-    const unlockOnInteraction = () => setSoundReady(sound.unlock());
-    window.addEventListener('pointerdown', unlockOnInteraction, { once: true });
-    window.addEventListener('keydown', unlockOnInteraction, { once: true });
+    function unlockOnInteraction() {
+      setSoundReady(sound.unlock());
+    }
+
+    globalThis.addEventListener('pointerdown', unlockOnInteraction, { once: true });
+    globalThis.addEventListener('keydown', unlockOnInteraction, { once: true });
     return () => {
-      window.removeEventListener('pointerdown', unlockOnInteraction);
-      window.removeEventListener('keydown', unlockOnInteraction);
+      globalThis.removeEventListener('pointerdown', unlockOnInteraction);
+      globalThis.removeEventListener('keydown', unlockOnInteraction);
     };
   }, [sound]);
 

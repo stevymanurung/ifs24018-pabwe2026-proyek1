@@ -15,8 +15,8 @@ export function useSubmit(action) {
       try {
         await action(...args);
         return true;
-      } catch (caught) {
-        setError(caught.message);
+      } catch (error_) {
+        setError(error_.message);
         return false;
       } finally {
         setPending(false);

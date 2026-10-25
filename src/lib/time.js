@@ -30,7 +30,9 @@ export const formatLongDate = (date) =>
 export function describeNextSession(next) {
   if (!next) return { course: '-', when: 'Belum ada jadwal' };
   const { session, daysAhead } = next;
-  const dayLabel = daysAhead === 0 ? 'Hari ini' : daysAhead === 1 ? 'Besok' : DAY_NAMES[session.day];
+  let dayLabel = DAY_NAMES[session.day];
+  if (daysAhead === 0) dayLabel = 'Hari ini';
+  if (daysAhead === 1) dayLabel = 'Besok';
   const room = session.room ? ` (${session.room})` : '';
   return { course: session.course, when: `${dayLabel}, ${session.start} - ${session.end}${room}` };
 }

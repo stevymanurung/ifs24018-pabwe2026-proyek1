@@ -8,7 +8,7 @@ export function StatusChart({ data }) {
   if (data.every((slice) => slice.value === 0)) return <EmptyState>Belum ada tugas.</EmptyState>;
 
   return (
-    <div className="h-64" role="img" aria-label="Grafik donat status tugas">
+    <figure className="h-64" aria-label="Grafik donat status tugas">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie data={data} dataKey="value" nameKey="label" innerRadius={60} outerRadius={90} paddingAngle={2} stroke="none">
@@ -20,7 +20,7 @@ export function StatusChart({ data }) {
           <Legend verticalAlign="bottom" />
         </PieChart>
       </ResponsiveContainer>
-    </div>
+    </figure>
   );
 }
 

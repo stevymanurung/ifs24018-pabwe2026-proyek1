@@ -26,8 +26,8 @@ export function createHttpClient({ baseUrl, fetchImpl = (...args) => fetch(...ar
         body: body === undefined ? undefined : JSON.stringify(body),
         signal,
       });
-    } catch (cause) {
-      if (cause?.name === 'AbortError') throw cause;
+    } catch (error_) {
+      if (error_?.name === 'AbortError') throw error_;
       throw new ApiError(0, 'NETWORK_ERROR', NETWORK_MESSAGE);
     }
 
